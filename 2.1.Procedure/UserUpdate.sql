@@ -29,6 +29,10 @@ BEGIN
             throw 53013, 'Reference table dbo.MANAGEMENT_ENTITY does not exist', 1;
         if @Entity_ID IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.MANAGEMENT_ENTITY WHERE Entity_ID = @Entity_ID)
             throw 53014, 'Entity_ID does not reference existing MANAGEMENT_ENTITY', 1;
+        if @Gender not in ('Other','Female','Male')
+            throw 53015,'Gender must belong to one of three:Other,Female,Male',1;
+        if @Account_status not in('restricted','warning','active')
+            throw 53016,'Account status must belong to one of three status:restricted,warning,active',1;
         Update dbo.[USER]
         SET
             ID_number = COALESCE(@ID_number, ID_number),

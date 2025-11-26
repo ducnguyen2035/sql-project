@@ -37,6 +37,10 @@ BEGIN
             throw 53005,'Phone_number already exist.',1;
         if @Email is not null and exists(select 1 from dbo.[USER] where Email = @Email)
             throw 53006,'Email already exist.',1;
+        if @Gender not in ('Other','Female','Male')
+            throw 53007,'Gender must belong to one of three:Other,Female,Male',1;
+        if @Account_status not in('restricted','warning','active')
+            throw 53008,'Account status must belong to one of three status:restricted,warning,active',1;
         SELECT @NewUserID = ISNULL(MAX(User_ID), 0) + 1 FROM dbo.[USER];
         INSERT INTO dbo.[USER] (User_ID,ID_number, Phone_number, Email, Full_name, Gender, Birthday, Account_status, Entity_ID)
         VALUES (@NewUserID,@ID_number, @Phone_number, @Email, @Full_name, @Gender, @Birthday, @Account_status, @Entity_ID);
