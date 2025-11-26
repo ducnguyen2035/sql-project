@@ -3,61 +3,45 @@ USE [QL_SHOPEE_BTL]
 GO
 -- ==============================================================================
 
--- 1. TRIGGER: VOUCHER MINIMUM SPEND VALIDATION (Ràng buộc Nghiệp vụ)
+-- 1. TRIGGER: COD PAYMENT INTEGRITY (Ràng buộc Nghiệp vụ)
 
-IF OBJECT_ID('TRG_Validate_Voucher_Min_Spend', 'TR') IS NOT NULL
-    DROP TRIGGER TRG_Validate_Voucher_Min_Spend;
+IF OBJECT_ID('TR_Check_COD_Payment_Integrity', 'TR') IS NOT NULL
+    DROP TRIGGER TR_Check_COD_Payment_Integrity;
 GO
--- 1. TRIGGER: Kiểm tra khoản chi tối thiểu để sử dụng voucher
 
-CREATE TRIGGER TRG_Validate_Voucher_Min_Spend
+CREATE TRIGGER TR_Check_COD_Payment_Integrity
 ON ORDER_PAYMENT
-INSTEAD OF INSERT, UPDATE
+AFTER UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM inserted WHERE Voucher_Code IS NOT NULL)
+    IF UPDATE(Payment_Status)
     BEGIN
-        DECLARE @Order_ID INT;
-        DECLARE @Voucher_Code VARCHAR(50);
-        DECLARE @Min_Spend DECIMAL(15, 2);
-        DECLARE @Current_Order_Value DECIMAL(15, 2);
-        DECLARE @MinSpendStr VARCHAR(50);
-
-        SELECT @Order_ID = Order_ID, @Voucher_Code = Voucher_Code FROM inserted;
-
-        SELECT @Min_Spend = Minimum_Order_Value
-        FROM VOUCHER
-        WHERE Voucher_Code = @Voucher_Code;
-
-        SELECT @Current_Order_Value = SUM(oi.Quantity * oi.Price_at_Purchase)
-        FROM SHIPMENT_PACKAGE sp
-        JOIN ORDER_ITEM oi ON sp.Shipment_ID = oi.Shipment_ID
-        WHERE sp.Order_ID = @Order_ID;
-
-        IF @Current_Order_Value < @Min_Spend
+        IF EXISTS (
+            SELECT 1
+            FROM inserted i
+            JOIN SHIPMENT_PACKAGE sp ON i.Order_ID = sp.Order_ID
+            WHERE
+                i.Payment_Method = 'COD'
+                AND i.Payment_Status = 'success'
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM (
+                        SELECT TOP 1 Status_Name
+                        FROM SHIPMENT_STATUS ss
+                        WHERE ss.Shipment_ID = sp.Shipment_ID
+                        ORDER BY ss.Updated_time DESC, ss.Status_ID DESC
+                    ) AS LatestStatus
+                    WHERE LatestStatus.Status_Name = 'delivered'
+                )
+        )
         BEGIN
-            SET @MinSpendStr = CAST(@Min_Spend AS VARCHAR(50));
-            RAISERROR ('Lỗi Nghiệp vụ (RB 15): Giá trị tiền hàng chưa đạt mức tối thiểu (%s) để áp dụng Voucher này.', 16, 1, @MinSpendStr);
+            RAISERROR ('Lỗi Nghiệp vụ (RB 12): Đơn hàng COD chưa có trạng thái "delivered" mới nhất, không thể xác nhận thanh toán thành công.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END;
     END;
-
-
-    IF EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
-    BEGIN
-
-        INSERT INTO ORDER_PAYMENT SELECT * FROM inserted;
-    END
-    ELSE IF EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
-    BEGIN
-
-        UPDATE op 
-        SET op.Order_Status = i.Order_Status, op.Payment_Status = i.Payment_Status, op.Voucher_Code = i.Voucher_Code -- Cập nhật các cột cần thiết
-        FROM ORDER_PAYMENT op JOIN inserted i ON op.Order_ID = i.Order_ID;
-    END
 END;
 GO
 
