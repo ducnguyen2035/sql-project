@@ -1,6 +1,6 @@
 USE [QL_SHOPEE_BTL]
 GO
-/****** Object:  StoredProcedure [dbo].[usp_User_Insert]    Script Date: 2025-11-26 6:35:15 PM ******/
+/****** Object:  StoredProcedure [dbo].[usp_User_Insert]     ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
