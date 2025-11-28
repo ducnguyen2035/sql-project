@@ -25,9 +25,9 @@ GO
 
 CREATE TABLE [USER] (
     User_ID INT PRIMARY KEY,
-    ID_number VARCHAR(50) UNIQUE,
-    Phone_number VARCHAR(20) UNIQUE,
-    Email VARCHAR(255) UNIQUE,
+    ID_number VARCHAR(12) UNIQUE NOT NULL,
+    Phone_number VARCHAR(10) UNIQUE NOT NULL,
+    Email VARCHAR(255) UNIQUE NOT NULL,
     Full_name VARCHAR(100) NOT NULL,
     Gender VARCHAR(10),
     Birthday DATE,
@@ -87,7 +87,7 @@ CREATE TABLE SHOP_SELL (
     Operation_Status VARCHAR(50),
     Logo VARBINARY(MAX), 
     Follower INT DEFAULT 0,
-    Rating DECIMAL(3, 2),
+    -- Rating DECIMAL(3, 2),
     Chat_response_rate DECIMAL(5, 2),
     Address VARCHAR(MAX), 
     Bank_Account VARCHAR(100),
@@ -100,7 +100,7 @@ CREATE TABLE SHOP_SELL (
     CONSTRAINT CK_SHOP_Shop_Type CHECK (Shop_Type IN ('Shopee Mall', 'preferred', 'normal')),
     CONSTRAINT CK_SHOP_Operation_Status CHECK (Operation_Status IN ('active', 'paused', 'closed')),
     CONSTRAINT CK_SHOP_Follower CHECK (Follower >= 0),
-    CONSTRAINT CK_SHOP_Rating CHECK (Rating >= 0 AND Rating <= 5),
+    -- CONSTRAINT CK_SHOP_Rating CHECK (Rating >= 0 AND Rating <= 5),
     CONSTRAINT CK_SHOP_Chat_Rate CHECK (Chat_response_rate >= 0 AND Chat_response_rate <= 100),
     CONSTRAINT fk_shop_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID)
 );
@@ -189,7 +189,7 @@ CREATE TABLE ORDER_PAYMENT (
     Voucher_value DECIMAL(10, 2),
     User_ID INT NOT NULL,
     
-    CONSTRAINT CK_ORDER_Status CHECK (Order_Status IN ('processing', 'confirmed', 'shipping', 'delivered', 'cancelled', 'completed')),
+    CONSTRAINT CK_ORDER_Status CHECK (Order_Status IN ('processing', 'confirmed', 'cancelled', 'shipping', 'delivered', 'completed')),
     CONSTRAINT CK_ORDER_Payment_Method CHECK (Payment_Method IN ('Shopee Pay', 'COD', 'Bank Transfer', 'Credit Card')),
     CONSTRAINT CK_ORDER_Payment_Status CHECK (Payment_Status IN ('processing', 'success', 'failed')),
     
@@ -261,10 +261,10 @@ CREATE TABLE ORDER_ITEM (
     Order_Item_ID INT PRIMARY KEY,
     Price_at_Purchase DECIMAL(10, 2),
     Quantity INT,
-    Shop_Voucher VARCHAR(50),
+    -- Shop_Voucher VARCHAR(50),
     Final_Item_Price DECIMAL(10, 2),
     Shipment_ID INT NOT NULL,
-    Variant_ID INT NOT NULL, 
+    Variant_ID INT NOT NULL UNIQUE, 
     
     CONSTRAINT CK_ITEM_Price CHECK (Price_at_Purchase >= 0),
     CONSTRAINT CK_ITEM_Quantity CHECK (Quantity > 0),
@@ -288,23 +288,19 @@ CREATE TABLE [POST] (
 );
 GO
 
-CREATE TABLE DELIVERY_STAFF (
+CREATE TABLE DRIVER (
     Staff_ID INT PRIMARY KEY,
     Full_Name VARCHAR(100),
     ID_Number VARCHAR(50) UNIQUE,
     Driver_License VARCHAR(50),
     Provider_ID INT NOT NULL,
-    CONSTRAINT fk_staff_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID)
-);
-GO
-
-CREATE TABLE TRUCK_DRIVER (
-    Staff_ID INT PRIMARY KEY,
+    
     Truck_ID INT, 
     Route_Assigned VARCHAR(MAX),
     Max_weight DECIMAL(10, 2),
+
     CONSTRAINT CK_TRUCK_Max_Weight CHECK (Max_weight > 0),
-    CONSTRAINT fk_trucker_staff FOREIGN KEY (Staff_ID) REFERENCES DELIVERY_STAFF(Staff_ID)
+    CONSTRAINT fk_staff_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID)
 );
 GO
 
@@ -318,7 +314,7 @@ CREATE TABLE [TRIP] (
     PRIMARY KEY (Staff_ID, Trip_ID), 
     
     CONSTRAINT CK_TRIP_Time CHECK (Arrival_Time > Departure_Time),
-    CONSTRAINT fk_trip_staff FOREIGN KEY (Staff_ID) REFERENCES TRUCK_DRIVER(Staff_ID),
+    CONSTRAINT fk_trip_staff FOREIGN KEY (Staff_ID) REFERENCES DRIVER(Staff_ID),
     CONSTRAINT fk_trip_arr_post FOREIGN KEY (Arrival_post_code) REFERENCES [POST](Post_Code),
     CONSTRAINT fk_trip_dep_post FOREIGN KEY (Departure_post_code) REFERENCES [POST](Post_Code)
 );
@@ -331,15 +327,6 @@ CREATE TABLE ORDER_PACKAGE_TRIP (
     PRIMARY KEY (Shipment_ID, Staff_ID, Trip_ID), 
     CONSTRAINT fk_op_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID),
     CONSTRAINT fk_op_trip FOREIGN KEY (Staff_ID, Trip_ID) REFERENCES [TRIP](Staff_ID, Trip_ID)
-);
-GO
-
-CREATE TABLE SHIPPER (
-    Staff_ID INT PRIMARY KEY,
-    Vehicle_type VARCHAR(100),
-    Delivery_zone VARCHAR(MAX), 
-    CONSTRAINT CK_SHIPPER_Vehicle CHECK (Vehicle_type IN ('motorcycle', 'e-bike', 'walker')),
-    CONSTRAINT fk_shipper_staff FOREIGN KEY (Staff_ID) REFERENCES DELIVERY_STAFF(Staff_ID)
 );
 GO
 
@@ -485,8 +472,8 @@ GO
 ----------------------------------------------------
 
 CREATE TABLE SHIPMENT_STATUS (
-    Shipment_ID INT NOT NULL,
-    Status_ID INT NOT NULL,
+    Shipment_ID INT,
+    Status_ID INT,
     Status_Name VARCHAR(100),
     Updated_time DATETIME,
     Current_Location VARCHAR(255),
@@ -494,6 +481,16 @@ CREATE TABLE SHIPMENT_STATUS (
     
     CONSTRAINT CK_STATUS_Name CHECK (Status_Name IN ('preparing', 'shipping', 'delivered', 'returned')),
     CONSTRAINT fk_status_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID)
+);
+GO
+
+CREATE TABLE PAYMENT_VOUCHER (
+    Order_ID INT,
+    Voucher_ID INT,
+    PRIMARY KEY (Order_ID, Voucher_ID),
+    
+    CONSTRAINT fk_pv_order FOREIGN KEY (Order_ID) REFERENCES ORDER_PAYMENT(Order_ID),
+    CONSTRAINT fk_pv_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID)
 );
 GO
 
@@ -571,7 +568,7 @@ BEGIN
     SELECT @Account_Status = Account_status
     FROM [USER] 
     WHERE User_ID = @User_ID_To_Check;
-
+    
     IF @Account_Status = 'restricted'
     BEGIN
         RAISERROR ('Error (RB 11): Your account is restricted and cannot create new orders.', 16, 1);
@@ -694,7 +691,7 @@ GO
 
 -- TRIGGER 5: Kiểm tra Shopee Mall khi thêm/sửa sản phẩm
 ----------------------------------------------------
-CREATE TRIGGER TR_Check_Shopee_Mall_Product
+CREATE TRIGGER TR_Check_description_Product
 ON PRODUCT
 FOR INSERT, UPDATE
 AS
@@ -709,6 +706,7 @@ BEGIN
             s.Shop_Type = 'Shopee Mall' 
             AND (i.Description IS NULL OR LTRIM(RTRIM(i.Description)) = '')
     )
+
     BEGIN
         RAISERROR ('Error (RB 8): Products listed on Shopee Mall must have a detailed description.', 16, 1);
         ROLLBACK TRANSACTION;
