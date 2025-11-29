@@ -1,38 +1,79 @@
 USE [QL_SHOPEE_BTL]
 GO
-/****** Object:  StoredProcedure [dbo].[usp_User_Update]     ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-ALTER   PROCEDURE [dbo].[usp_User_Update]
+CREATE OR ALTER   PROCEDURE [dbo].[usp_User_Update]
     @User_ID INT,
-    @ID_number VARCHAR(50) = NULL,
-    @Phone_number VARCHAR(20) = NULL,
-    @Email VARCHAR(255) = NULL,
-    @Full_name VARCHAR(100) = NULL,
+    @ID_number VARCHAR(12) ,
+    @Phone_number VARCHAR(10) ,
+    @Email VARCHAR(255) ,
+    @Full_name VARCHAR(100),
     @Gender VARCHAR(10) = NULL,
+    @Birthday DATE=null,
     @Account_status VARCHAR(50) = NULL,
-    @Entity_ID INT = NULL
+    @Entity_ID INT = 1
 AS
 BEGIN
 	SET NOCOUNT ON;
     begin try
         begin transaction
-        if @User_ID is null
-            throw 53010,'User_ID is required',1;
         if OBJECT_ID(N'dbo.[USER]')is null
-            throw 53011,'Target table dbo.[USER] does not exist',1;
+            throw 53100,'Target table dbo.[USER] does not exist',1;
+        if @User_ID is null
+            throw 53101,'User_ID is required',1;
         if not exists(select 1 from dbo.[USER] where User_ID=@User_ID)
-            throw 53012,'User not found',1;
-        if @Entity_ID IS NOT NULL AND OBJECT_ID(N'dbo.MANAGEMENT_ENTITY') IS NULL
-            throw 53013, 'Reference table dbo.MANAGEMENT_ENTITY does not exist', 1;
-        if @Entity_ID IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.MANAGEMENT_ENTITY WHERE Entity_ID = @Entity_ID)
-            throw 53014, 'Entity_ID does not reference existing MANAGEMENT_ENTITY', 1;
-        if @Gender not in ('Other','Female','Male')
-            throw 53015,'Gender must belong to one of three:Other,Female,Male',1;
-        if @Account_status not in('restricted','warning','active')
-            throw 53016,'Account status must belong to one of three status:restricted,warning,active',1;
+            throw 53102,'User not found',1;
+        if @ID_number is null 
+            throw 53103,'ID_number is required',1;
+        if not exists(select 1 from dbo.[USER] where ID_number=@ID_number)
+            throw 53104,'ID_number not found',1;
+        if @ID_number is not null
+        begin
+            if LEN(@ID_number) <> 12
+               OR @ID_number NOT LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+            throw 53105,'ID_number must be exactly 12 digits.', 1;
+        end
+        if @Phone_number is null
+            throw 53106,'Phone_number is required',1;
+        if not exists(select 1 from dbo.[USER] where Phone_number=@Phone_number)
+            throw 53107,'Phone_number not found',1;
+        if @Phone_number is not null
+        begin   
+            if len(@Phone_number)<>10
+                or left(@Phone_number,1)<>'0'
+                or @Phone_number not like '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+            throw 53108,'Invalid Phone_number, Phone_number must be exactly 10 digits and start with 0.', 1;   
+        end
+        if @Email is null
+            throw 53109,'Email is required',1;
+        if not exists(select 1 from dbo.[USER] where Email=@Email)
+            throw 53110,'Email not found',1;
+        if @Email is not null
+        begin
+            if charindex('@', @Email) = 0
+                throw 53111, 'Email must contain ''@'' ', 1;
+        end
+        if @Email is not null
+        begin 
+            if charindex(' ', @Email) > 0
+                throw 53112,'Email must not contain spaces.',1;
+        end
+        if @Full_name is null or len(Ltrim(Rtrim(@Full_name)))=0
+            throw 53113,'Full_name is required',1;
+        if not exists(select 1 from dbo.[USER] where @Full_name=@Full_name)
+            throw 53114,'@Full_name not found',1;
+        if @Gender is not null and @Gender not in ('Other','Female','Male')
+            throw 53115,'Gender must belong to one of three:Other,Female,Male',1;
+        if @Birthday is not null
+        begin
+            if @Birthday > cast(getdate()as date)
+                THROW 53116,'Birthday cannot be in the future.', 1;
+            DECLARE @Age int;
+            set @Age = datediff(year,@Birthday,getdate())
+            - case when dateadd(year,datediff(year,@Birthday,getdate()),@Birthday) > getdate() then 1 else 0 end;
+            if @Age < 0 or @Age > 150
+                THROW 53117,'Age must be between 0 and 150.', 1;
+        end
+        if @Account_status is not null and @Account_status not in('restricted','warning','active')
+            throw 53118,'Account status must belong to one of three status:restricted,warning,active',1;
         Update dbo.[USER]
         SET
             ID_number = COALESCE(@ID_number, ID_number),

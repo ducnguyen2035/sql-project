@@ -25,9 +25,7 @@ DELETE FROM PRODUCT;
 DELETE FROM CATEGORY_HIERARCHY;
 DELETE FROM CATEGORY;
 DELETE FROM [TRIP];
-DELETE FROM TRUCK_DRIVER;
-DELETE FROM SHIPPER;
-DELETE FROM DELIVERY_STAFF;
+DELETE FROM DRIVER;
 DELETE FROM [POST];
 DELETE FROM MANAGEMENT_ENTITY_SHIPPING_PROVIDER;
 DELETE FROM SHIPPING_PROVIDER;
@@ -159,20 +157,10 @@ VALUES
 GO
 
 -- 11. SHOP_SELL
-INSERT INTO SHOP_SELL (Shop_ID, Shop_name, Shop_type, Description, Operation_Status, Logo, Follower, Rating, Chat_response_rate, Address, Bank_Account, Email_for_Online_Bills, Stock_address, Tax_code, Type_of_Business, User_ID)
+INSERT INTO SHOP_SELL (Shop_ID, Shop_name, Shop_type, Description, Operation_Status, Logo, Follower, Chat_response_rate, Address, Bank_Account, Email_for_Online_Bills, Stock_address, Tax_code, Type_of_Business, User_ID)
 VALUES
-(501, 'The Official Mall', 'Shopee Mall', 'Genuine products.', 'active', NULL, 15000, 4.9, 98.5, '123 Le Loi, Q1, HCM', '0123456789', 'mall@shop.com', 'Warehouse A, Q7, HCM', 'TAX001', 'Company', 201),
-(502, 'Preferred Plus Shop', 'preferred', 'Quality items.', 'active', NULL, 8000, 4.8, 95.0, '456 Hai Ba Trung, Q3, HCM', '9876543210', 'preferred@shop.com', 'Warehouse B, Q9, HCM', 'TAX002', 'Individual', 202);
-GO
-
--- 12. DELIVERY_STAFF
-INSERT INTO DELIVERY_STAFF (Staff_ID, Full_Name, ID_Number, Driver_License, Provider_ID)
-VALUES
-(301, 'Ha Van Tai', '002080111111', 'DL123', 1),
-(302, 'Do Van Chuyen', '002080222222', 'DL456', 1),
-(303, 'Ly Van Toc', '002080333333', 'DL789', 3),
-(304, 'Vu Van Nhanh', '002080444444', 'DL987', 5),
-(305, 'Pham Van Giao', '002080555555', 'DL654', 2);
+(501, 'The Official Mall', 'Shopee Mall', 'Genuine products.', 'active', NULL, 15000, 98.5, '123 Le Loi, Q1, HCM', '0123456789', 'mall@shop.com', 'Warehouse A, Q7, HCM', 'TAX001', 'Company', 201),
+(502, 'Preferred Plus Shop', 'preferred', 'Quality items.', 'active', NULL, 8000, 95.0, '456 Hai Ba Trung, Q3, HCM', '9876543210', 'preferred@shop.com', 'Warehouse B, Q9, HCM', 'TAX002', 'Individual', 202);
 GO
 
 -- 13. BANK_ACCOUNT
@@ -206,22 +194,14 @@ VALUES
 (106, 'staff', 502);       
 GO
 
--- 16. TRUCK_DRIVER
-INSERT INTO TRUCK_DRIVER (Staff_ID, Truck_ID, Route_Assigned, Max_weight)
+-- 16. DRIVER
+INSERT INTO DRIVER (Staff_ID,Full_Name,ID_Number,Driver_License,Provider_ID, Truck_ID, Route_Assigned, Max_weight)
 VALUES
-(301, 10, 'Route HCM-HN', 2000),
-(302, 11, 'Route HCM-DN', 1500),
-(303, 12, 'Route HN-DN', 1500);
+(301, 10,'Nguyen Van A' ,null,1,null, 'Route HCM-HN', 2000),
+(302, 11,'Doan Thi B'   ,null,2,null, 'Route HCM-DN', 1500),
+(303, 12,'Tran Quoc C'  ,null,3,null, 'Route HN-DN' , 1500);
 GO
-
--- 17. SHIPPER
-INSERT INTO SHIPPER (Staff_ID, Vehicle_type, Delivery_zone)
-VALUES
-(304, 'motorcycle', 'HCMC District 1, 3, 4'),
-(305, 'motorcycle', 'Hanoi Ba Dinh, Cau Giay');
-GO
-
--- 18. PRODUCT
+-- 17. PRODUCT
 INSERT INTO PRODUCT (Product_ID, Product_name, Description, Base_Price, Total_Sales, Average_Rating, Base_Image, Product_Status, C_ID, Shop_ID)
 VALUES
 (1001, 'Smartphone Model X', 'Latest generation smartphone.', 10000000, 0, 0, NULL, 'for_sale', 5, 501),
@@ -231,7 +211,7 @@ VALUES
 (1005, 'Laptop Pro', 'High-end laptop for professionals.', 25000000, 0, 0, NULL, 'discontinued', 1, 501);
 GO
 
--- 19. VOUCHER
+-- 18. VOUCHER
 INSERT INTO VOUCHER (Voucher_ID, Quantity, Voucher_Code, Voucher_Type, Discount_Type, Minimum_Order_Value, Maximum_Order_Value, Start_Date, Expiration_Date, Program_ID)
 VALUES
 (1, 100, 'SALE1212', 'Platform', 'percent', 100000, 50000, '2025-12-12 00:00:00', '2025-12-12 23:59:59', 1),
@@ -270,9 +250,9 @@ INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estim
 VALUES
 (8001, 'SPX0001', NULL, '2025-11-20', 1, 15000, 'successful delivery', NULL, 9001, 101);
 GO
-INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Shop_Voucher, Final_Item_Price, Shipment_ID, Variant_ID)
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
 VALUES
-(7001, 10000000, 2, 'TECHSALE', 9000000, 8001, 2001);
+(7001, 10000000, 2, 9000000, 8001, 2001);
 GO
 
 -- SCENARIO 2: Successful Order
@@ -285,12 +265,12 @@ INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estim
 VALUES
 (8002, 'SPX0002', NULL, '2025-11-25', 1, 15000, 'successful delivery', NULL, 9002, 102);
 GO
-INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Shop_Voucher, Final_Item_Price, Shipment_ID, Variant_ID)
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
 VALUES
-(7002, 150000, 1, 'FASHION20K', 140000, 8002, 2003);
-INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Shop_Voucher, Final_Item_Price, Shipment_ID, Variant_ID)
+(7002, 150000, 1, 140000, 8002, 2003);
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
 VALUES
-(7003, 150000, 1, NULL, 150000, 8002, 2004);
+(7003, 150000, 1,  150000, 8002, 2004);
 GO
 
 -- SCENARIO 3: "Completed" Order
@@ -303,9 +283,9 @@ INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estim
 VALUES
 (8004, 'SPX0004', '2025-11-03 12:00:00', '2025-11-03', 1, 20000, 'successful delivery', NULL, 9004, 101);
 GO
-INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Shop_Voucher, Final_Item_Price, Shipment_ID, Variant_ID)
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
 VALUES
-(7004, 300000, 1, NULL, 300000, 8004, 2005);
+(7004, 300000, 1, 300000, 8004, 2005);
 GO
 
 -- SCENARIO 4: FAILED Order (Trigger 2)
@@ -332,9 +312,9 @@ BEGIN TRY
     VALUES
     (8005, 'SPX0005', NULL, '2025-11-18', 1, 15000, 'successful delivery', NULL, 9005, 102);
 
-    INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Shop_Voucher, Final_Item_Price, Shipment_ID, Variant_ID)
+    INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
     VALUES
-    (7005, 150000, 3, NULL, 150000, 8005, 2004);
+    (7005, 150000, 3,  150000, 8005, 2004);
 END TRY
 BEGIN CATCH
     PRINT 'CAUGHT ERROR (Success): ' + ERROR_MESSAGE();
