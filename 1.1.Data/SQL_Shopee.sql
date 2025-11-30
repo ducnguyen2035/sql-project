@@ -1,5 +1,5 @@
 ﻿-- ===================================================
--- CREATE AND EXECUTE SCRIPT
+-- SQL SCRIPT
 -- ===================================================
 
 CREATE DATABASE [QL_SHOPEE_BTL];
@@ -8,7 +8,7 @@ GO
 USE [QL_SHOPEE_BTL];
 GO
 
--- 1. Khối Quản lý Cấp cao & Người dùng
+-- 1. KHỐI QUẢN LÝ & USER
 ----------------------------------------------------
 
 CREATE TABLE MANAGEMENT_ENTITY (
@@ -32,11 +32,15 @@ CREATE TABLE [USER] (
     Gender VARCHAR(10),
     Birthday DATE,
     Account_status VARCHAR(50),
-    Entity_ID INT NOT NULL,
+    -- SET DEFAULT
+    Entity_ID INT NOT NULL DEFAULT 1,
     
     CONSTRAINT CK_USER_Account_status CHECK (Account_status IN ('active', 'warning', 'restricted')),
     CONSTRAINT CK_USER_Gender CHECK (Gender IN ('Male', 'Female', 'Other')),
+    -- SET DEFAULT khi đơn vị quản lý bị xóa
     CONSTRAINT fk_user_entity FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID)
+        ON DELETE SET DEFAULT 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -46,12 +50,9 @@ CREATE TABLE MEMBERSHIP_TIER (
     Min_orders_Per_half_year INT,
     Min_spend_Per_half_year DECIMAL(12, 2),
     Discount_Rate DECIMAL(5, 2),
-    Benefit DECIMAL(10, 2)  NOT NULL,
+    Benefit DECIMAL(10, 2) NOT NULL,
     
-    CONSTRAINT CK_TIER_Tier CHECK (Tier IN ('Standard', 'Silver', 'Gold', 'Diamond')),
-    CONSTRAINT CK_TIER_Min_Orders CHECK (Min_orders_Per_half_year >= 0),
-    CONSTRAINT CK_TIER_Min_Spend CHECK (Min_spend_Per_half_year >= 0),
-    CONSTRAINT CK_TIER_Discount_Rate CHECK (Discount_Rate >= 0 AND Discount_Rate <= 100)
+    CONSTRAINT CK_TIER_Tier CHECK (Tier IN ('Standard', 'Silver', 'Gold', 'Diamond'))
 );
 GO
 
@@ -59,12 +60,18 @@ CREATE TABLE CUSTOMER (
     User_ID INT PRIMARY KEY,
     Total_Order INT DEFAULT 0,
     Total_Spending DECIMAL(12, 2) DEFAULT 0,
-    Tier_ID INT NOT NULL,
+    -- DEFAULT 1 (Standard) 
+    Tier_ID INT NOT NULL DEFAULT 1,
     
     CONSTRAINT CK_CUSTOMER_Total_Order CHECK (Total_Order >= 0),
     CONSTRAINT CK_CUSTOMER_Total_Spending CHECK (Total_Spending >= 0),
-    CONSTRAINT fk_customer_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID),
+    -- Chặn xóa User
+    CONSTRAINT fk_customer_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID)
+        ON DELETE NO ACTION,
+    -- Tự động về hạng Standard nếu hạng hiện tại bị xóa 
     CONSTRAINT fk_customer_tier FOREIGN KEY (Tier_ID) REFERENCES MEMBERSHIP_TIER(Tier_ID)
+        ON DELETE SET DEFAULT 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -72,11 +79,14 @@ CREATE TABLE BANK_ACCOUNT (
     Bank_account VARCHAR(100) NOT NULL,
     User_ID INT NOT NULL,
     PRIMARY KEY (Bank_account, User_ID),
+    -- Xóa User -> xoá Bank Account
     CONSTRAINT fk_bank_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID)
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
--- 2. Khối Quản lý Cửa hàng & Sản phẩm
+-- 2. KHỐI CỬA HÀNG & SẢN PHẨM
 ----------------------------------------------------
 
 CREATE TABLE SHOP_SELL (
@@ -87,7 +97,6 @@ CREATE TABLE SHOP_SELL (
     Operation_Status VARCHAR(50),
     Logo VARBINARY(MAX), 
     Follower INT DEFAULT 0,
-    -- Rating DECIMAL(3, 2),
     Chat_response_rate DECIMAL(5, 2),
     Address VARCHAR(MAX), 
     Bank_Account VARCHAR(100),
@@ -100,9 +109,10 @@ CREATE TABLE SHOP_SELL (
     CONSTRAINT CK_SHOP_Shop_Type CHECK (Shop_Type IN ('Shopee Mall', 'preferred', 'normal')),
     CONSTRAINT CK_SHOP_Operation_Status CHECK (Operation_Status IN ('active', 'paused', 'closed')),
     CONSTRAINT CK_SHOP_Follower CHECK (Follower >= 0),
-    -- CONSTRAINT CK_SHOP_Rating CHECK (Rating >= 0 AND Rating <= 5),
     CONSTRAINT CK_SHOP_Chat_Rate CHECK (Chat_response_rate >= 0 AND Chat_response_rate <= 100),
+    -- Chặn xóa User nếu đang là chủ Shop
     CONSTRAINT fk_shop_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID)
+        ON DELETE NO ACTION
 );
 GO
 
@@ -111,8 +121,13 @@ CREATE TABLE SHOP_STAFF (
     [Role] VARCHAR(100),
     Shop_ID INT NOT NULL,
     CONSTRAINT CK_STAFF_Role CHECK ([Role] IN ('super_admin', 'manager', 'staff')),
-    CONSTRAINT fk_staff_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID),
-    CONSTRAINT fk_staff_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID)
+    -- Xóa User hoặc Shop thì xóa luôn Staff 
+    CONSTRAINT fk_staff_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_staff_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -130,8 +145,13 @@ CREATE TABLE CATEGORY_HIERARCHY (
     PRIMARY KEY (Parent_Category_ID, Sub_Category_ID),
     
     CONSTRAINT CK_CATEGORY_Hierarchy CHECK (Parent_Category_ID != Sub_Category_ID),
-    CONSTRAINT fk_parent_category FOREIGN KEY (Parent_Category_ID) REFERENCES CATEGORY(Category_ID),
-    CONSTRAINT fk_sub_category FOREIGN KEY (Sub_Category_ID) REFERENCES CATEGORY(Category_ID)
+    -- Xóa Category cha/con thì xóa luôn quan hệ này
+    CONSTRAINT fk_parent_category FOREIGN KEY (Parent_Category_ID) REFERENCES CATEGORY(Category_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_sub_category FOREIGN KEY (Sub_Category_ID) REFERENCES CATEGORY(Category_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -151,8 +171,10 @@ CREATE TABLE PRODUCT (
     CONSTRAINT CK_PRODUCT_Total_Sales CHECK (Total_Sales >= 0),
     CONSTRAINT CK_PRODUCT_Average_Rating CHECK (Average_Rating >= 0 AND Average_Rating <= 5),
     CONSTRAINT CK_PRODUCT_Status CHECK (Product_Status IN ('for_sale', 'paused', 'discontinued')),
-    CONSTRAINT fk_product_category FOREIGN KEY (C_ID) REFERENCES CATEGORY(Category_ID),
-    CONSTRAINT fk_product_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID)
+    -- Chặn xóa Category hoặc Shop nếu đang có sản phẩm 
+    CONSTRAINT fk_product_category FOREIGN KEY (C_ID) REFERENCES CATEGORY(Category_ID) 
+        ON DELETE NO ACTION,
+    CONSTRAINT fk_product_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID) ON DELETE NO ACTION
 );
 GO
 
@@ -166,12 +188,17 @@ CREATE TABLE PRODUCT_REVIEW (
     User_ID INT NOT NULL, 
     
     CONSTRAINT CK_REVIEW_Rating_Star CHECK (Rating_Star >= 1 AND Rating_Star <= 5),
-    CONSTRAINT fk_review_product FOREIGN KEY (P_ID) REFERENCES PRODUCT(Product_ID),
-    CONSTRAINT fk_review_customer FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID)
+    -- Xóa Sản phẩm thì xóa Review 
+    -- Xóa Customer thì chặn 
+    CONSTRAINT fk_review_product FOREIGN KEY (P_ID) REFERENCES PRODUCT(Product_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_review_customer FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID) 
+        ON DELETE NO ACTION
 );
 GO
 
--- 3. Khối Quản lý Đơn hàng & Thanh toán
+-- 3. KHỐI ĐƠN HÀNG & THANH TOÁN
 ----------------------------------------------------
 
 CREATE TABLE ORDER_PAYMENT (
@@ -189,7 +216,7 @@ CREATE TABLE ORDER_PAYMENT (
     Voucher_value DECIMAL(10, 2),
     User_ID INT NOT NULL,
     
-    CONSTRAINT CK_ORDER_Status CHECK (Order_Status IN ('processing', 'confirmed', 'cancelled', 'shipping', 'delivered', 'completed')),
+    CONSTRAINT CK_ORDER_Status CHECK (Order_Status IN ('processing', 'confirmed', 'shipping', 'delivered', 'cancelled', 'completed')),
     CONSTRAINT CK_ORDER_Payment_Method CHECK (Payment_Method IN ('Shopee Pay', 'COD', 'Bank Transfer', 'Credit Card')),
     CONSTRAINT CK_ORDER_Payment_Status CHECK (Payment_Status IN ('processing', 'success', 'failed')),
     
@@ -201,12 +228,15 @@ CREATE TABLE ORDER_PAYMENT (
     CONSTRAINT CK_ORDER_Payed_Value CHECK (Payed_value >= 0),
     CONSTRAINT CK_ORDER_Total_Value CHECK (Payed_value = (Product_value + Shipment_value - Voucher_value)),
     
+    -- Chặn xóa User đã có đơn hàng 
     CONSTRAINT fk_order_user FOREIGN KEY (User_ID) REFERENCES [USER](User_ID)
+        ON DELETE NO ACTION
 );
 GO
 
 CREATE TABLE SHIPPING_PROVIDER (
     Provider_ID INT PRIMARY KEY,
+    Provider_Name VARCHAR(255) NOT NULL,
     Coverage_Area VARCHAR(MAX), 
     Weight_Limit DECIMAL(10, 2),
     Size_Limit VARCHAR(50),
@@ -229,12 +259,16 @@ CREATE TABLE SHIPMENT_PACKAGE (
     Order_ID INT NOT NULL,
     Customer_ID INT NOT NULL,
     
+    CONSTRAINT CK_SHIPMENT_Type CHECK (Shipment_type IN ('successful delivery', 'return order')),
     CONSTRAINT CK_SHIPMENT_Shipping_Fee CHECK (Shipping_Fee >= 0),
-    CONSTRAINT CK_SHIPMENT_Return_Reason CHECK (NOT (Shipment_type = 'Return Order' AND Reason IS NULL)),
-    CONSTRAINT CK_SHIPMENT_Return_Date CHECK (NOT (Shipment_type = 'Return Order' AND Delivery_Date IS NOT NULL)),
+    CONSTRAINT CK_SHIPMENT_Return_Reason CHECK (NOT (Shipment_type = 'return order' AND Reason IS NULL)),
+    CONSTRAINT CK_SHIPMENT_Return_Date CHECK (NOT (Shipment_type = 'return order' AND Delivery_Date IS NOT NULL)),
     
-    CONSTRAINT fk_shipment_order FOREIGN KEY (Order_ID) REFERENCES ORDER_PAYMENT(Order_ID),
-    CONSTRAINT fk_shipment_customer FOREIGN KEY (Customer_ID) REFERENCES [USER](User_ID)
+    -- Chặn xóa Đơn hàng nếu đã có Vận đơn
+    CONSTRAINT fk_shipment_order FOREIGN KEY (Order_ID) REFERENCES ORDER_PAYMENT(Order_ID) 
+        ON DELETE NO ACTION,
+    CONSTRAINT fk_shipment_customer FOREIGN KEY (Customer_ID) REFERENCES [USER](User_ID) 
+        ON DELETE NO ACTION
 );
 GO
 
@@ -253,7 +287,10 @@ CREATE TABLE VARIANT (
     CONSTRAINT CK_VARIANT_SKU CHECK (SKU >= 0),
     CONSTRAINT CK_VARIANT_Status CHECK (Variant_Status IN ('for_sale', 'paused', 'discontinued')),
     
-    CONSTRAINT fk_variant_product FOREIGN KEY (P_ID) REFERENCES PRODUCT(Product_ID)
+    -- Xóa Product thì xóa luôn Variant 
+    CONSTRAINT fk_variant_product FOREIGN KEY (P_ID) REFERENCES PRODUCT(Product_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -261,7 +298,6 @@ CREATE TABLE ORDER_ITEM (
     Order_Item_ID INT PRIMARY KEY,
     Price_at_Purchase DECIMAL(10, 2),
     Quantity INT,
-    -- Shop_Voucher VARCHAR(50),
     Final_Item_Price DECIMAL(10, 2),
     Shipment_ID INT NOT NULL,
     Variant_ID INT NOT NULL UNIQUE, 
@@ -270,12 +306,17 @@ CREATE TABLE ORDER_ITEM (
     CONSTRAINT CK_ITEM_Quantity CHECK (Quantity > 0),
     CONSTRAINT CK_ITEM_Final_Price CHECK (Final_Item_Price >= 0),
     
-    CONSTRAINT fk_orderitem_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID),
+    -- Xóa Shipment thì xóa Item
+    -- Chặn xóa Variant đã bán 
+    CONSTRAINT fk_orderitem_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
     CONSTRAINT fk_orderitem_variant FOREIGN KEY (Variant_ID) REFERENCES VARIANT(Variant_ID) 
+        ON DELETE NO ACTION
 );
 GO
 
--- 4. Khối Quản lý Vận chuyển & Giao hàng
+-- 4. VẬN CHUYỂN (GỘP DRIVER)
 ----------------------------------------------------
 
 CREATE TABLE [POST] (
@@ -284,39 +325,50 @@ CREATE TABLE [POST] (
     Address VARCHAR(MAX),
     Hotline VARCHAR(20),
     Provider_ID INT NOT NULL,
-    CONSTRAINT fk_post_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID)
+    -- Chặn xóa Provider đang có Bưu cục
+    CONSTRAINT fk_post_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID) 
+        ON DELETE NO ACTION
 );
 GO
 
 CREATE TABLE DRIVER (
     Staff_ID INT PRIMARY KEY,
-    Full_Name VARCHAR(100),
-    ID_Number VARCHAR(50) UNIQUE,
+    Full_Name VARCHAR(100) NOT NULL,
+    ID_Number VARCHAR(12) UNIQUE NOT NULL,
     Driver_License VARCHAR(50),
-    Provider_ID INT NOT NULL,
+    -- Bỏ NOT NULL để cho phép SET NULL
+    Provider_ID INT,
     
-    Truck_ID INT, 
+    Driver_Type VARCHAR(20) NOT NULL, 
+    Truck_ID INT,
     Route_Assigned VARCHAR(MAX),
     Max_weight DECIMAL(10, 2),
 
-    CONSTRAINT CK_TRUCK_Max_Weight CHECK (Max_weight > 0),
-    CONSTRAINT fk_staff_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID)
+    CONSTRAINT CK_DRIVER_Type CHECK (Driver_Type IN ('Truck', 'Shipper')),
+    -- Nếu Provider bị xóa, Driver trở thành tự do
+    CONSTRAINT fk_driver_provider FOREIGN KEY (Provider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID)
+        ON DELETE SET NULL 
+        ON UPDATE CASCADE
 );
 GO
 
 CREATE TABLE [TRIP] (
     Trip_ID INT NOT NULL,
     Staff_ID INT NOT NULL, 
-    Arrival_Time DATETIME,
-    Departure_Time DATETIME,
-    Arrival_post_code VARCHAR(20)  NOT NULL,
+    Arrival_Time DATETIME NOT NULL,
+    Departure_Time DATETIME NOT NULL,
+    Arrival_post_code VARCHAR(20) NOT NULL,
     Departure_post_code VARCHAR(20) NOT NULL,
     PRIMARY KEY (Staff_ID, Trip_ID), 
     
     CONSTRAINT CK_TRIP_Time CHECK (Arrival_Time > Departure_Time),
-    CONSTRAINT fk_trip_staff FOREIGN KEY (Staff_ID) REFERENCES DRIVER(Staff_ID),
-    CONSTRAINT fk_trip_arr_post FOREIGN KEY (Arrival_post_code) REFERENCES [POST](Post_Code),
-    CONSTRAINT fk_trip_dep_post FOREIGN KEY (Departure_post_code) REFERENCES [POST](Post_Code)
+    -- Chặn xóa Driver hoặc Post đang có Trip 
+    CONSTRAINT fk_trip_driver FOREIGN KEY (Staff_ID) REFERENCES DRIVER(Staff_ID) 
+        ON DELETE NO ACTION,
+    CONSTRAINT fk_trip_arr_post FOREIGN KEY (Arrival_post_code) REFERENCES [POST](Post_Code) 
+        ON DELETE NO ACTION,
+    CONSTRAINT fk_trip_dep_post FOREIGN KEY (Departure_post_code) REFERENCES [POST](Post_Code) 
+        ON DELETE NO ACTION
 );
 GO
 
@@ -325,12 +377,17 @@ CREATE TABLE ORDER_PACKAGE_TRIP (
     Staff_ID INT NOT NULL, 
     Trip_ID INT NOT NULL,
     PRIMARY KEY (Shipment_ID, Staff_ID, Trip_ID), 
-    CONSTRAINT fk_op_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID),
-    CONSTRAINT fk_op_trip FOREIGN KEY (Staff_ID, Trip_ID) REFERENCES [TRIP](Staff_ID, Trip_ID)
+    -- Xóa Shipment hoặc Trip thì xóa liên kết này 
+    CONSTRAINT fk_op_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_op_trip FOREIGN KEY (Staff_ID, Trip_ID) REFERENCES [TRIP](Staff_ID, Trip_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
--- 5. Khối Khuyến mãi & Dịch vụ
+-- 5. KHUYẾN MÃI & DỊCH VỤ
 ----------------------------------------------------
 
 CREATE TABLE PROMOTION_PROGRAM (
@@ -361,7 +418,24 @@ CREATE TABLE VOUCHER (
     CONSTRAINT CK_VOUCHER_Min_Value CHECK (Minimum_Order_Value >= 0),
     CONSTRAINT CK_VOUCHER_Date CHECK (Expiration_Date >= Start_Date),
     
+    -- Xóa Chương trình thì xóa Voucher
     CONSTRAINT fk_voucher_program FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID)
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+GO
+
+CREATE TABLE PAYMENT_VOUCHER (
+    Order_ID INT NOT NULL,
+    Voucher_ID INT NOT NULL,
+    PRIMARY KEY (Order_ID, Voucher_ID),
+    -- Xóa Đơn hoặc Voucher thì xóa liên kết 
+    CONSTRAINT fk_pv_order FOREIGN KEY (Order_ID) REFERENCES ORDER_PAYMENT(Order_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_pv_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID) 
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
@@ -381,126 +455,100 @@ CREATE TABLE SERVICE_PACKAGE (
     Provider_ID INT NOT NULL,
     
     CONSTRAINT CK_PACKAGE_Cost CHECK (Service_Cost >= 0),
+    -- Xóa Provider thì xóa Package 
     CONSTRAINT fk_package_provider FOREIGN KEY (Provider_ID) REFERENCES SERVICE_PROVIDER(Provider_ID)
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
--- 6. Khối Liên kết (Bảng trung gian)
+-- 6. KHỐI LIÊN KẾT (ALL CASCADE)
 ----------------------------------------------------
 CREATE TABLE MANAGEMENT_ENTITY_SHIPPING_PROVIDER (
-    ShProvider_ID INT,
-    Entity_ID INT,
-    PRIMARY KEY (ShProvider_ID, Entity_ID),
-    CONSTRAINT fk_mesp_provider FOREIGN KEY (ShProvider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID),
-    CONSTRAINT fk_mesp_entity FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID)
+    ShProvider_ID INT, Entity_ID INT, PRIMARY KEY (ShProvider_ID, Entity_ID),
+    FOREIGN KEY (ShProvider_ID) REFERENCES SHIPPING_PROVIDER(Provider_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE SERVICE_PROVIDER_MANAGEMENT_ENTITY (
-    Provider_ID INT,
-    Entity_ID INT,
-    PRIMARY KEY (Provider_ID, Entity_ID),
-    CONSTRAINT fk_spme_provider FOREIGN KEY (Provider_ID) REFERENCES SERVICE_PROVIDER(Provider_ID),
-    CONSTRAINT fk_spme_entity FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID)
+    Provider_ID INT, Entity_ID INT, PRIMARY KEY (Provider_ID, Entity_ID),
+    FOREIGN KEY (Provider_ID) REFERENCES SERVICE_PROVIDER(Provider_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE MANAGEMENT_ENTITY_PROMOTION_PROGRAM (
-    Entity_ID INT,
-    Program_ID INT,
-    PRIMARY KEY (Entity_ID, Program_ID),
-    CONSTRAINT fk_mepp_entity FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID),
-    CONSTRAINT fk_mepp_program FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID)
+    Entity_ID INT, Program_ID INT, PRIMARY KEY (Entity_ID, Program_ID),
+    FOREIGN KEY (Entity_ID) REFERENCES MANAGEMENT_ENTITY(Entity_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE PROMOTION_PROGRAM_SHOP (
-    Shop_ID INT,
-    Program_ID INT,
-    PRIMARY KEY (Shop_ID, Program_ID),
-    CONSTRAINT fk_pps_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID),
-    CONSTRAINT fk_pps_program FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID)
+    Shop_ID INT, Program_ID INT, PRIMARY KEY (Shop_ID, Program_ID),
+    FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE PROMOTION_PROGRAM_PRODUCT (
-    Product_ID INT,
-    Program_ID INT,
-    PRIMARY KEY (Product_ID, Program_ID),
-    CONSTRAINT fk_ppp_product FOREIGN KEY (Product_ID) REFERENCES PRODUCT(Product_ID),
-    CONSTRAINT fk_ppp_program FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID)
+    Product_ID INT, Program_ID INT, PRIMARY KEY (Product_ID, Program_ID),
+    FOREIGN KEY (Product_ID) REFERENCES PRODUCT(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Program_ID) REFERENCES PROMOTION_PROGRAM(Program_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE VOUCHER_SHOP (
-    Voucher_ID INT,
-    Shop_ID INT,
-    PRIMARY KEY (Voucher_ID, Shop_ID),
-    CONSTRAINT fk_vs_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID),
-    CONSTRAINT fk_vs_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID)
+    Voucher_ID INT, Shop_ID INT, PRIMARY KEY (Voucher_ID, Shop_ID),
+    FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE VOUCHER_CUSTOMER (
-    Voucher_ID INT,
-    User_ID INT,
-    PRIMARY KEY (Voucher_ID, User_ID),
-    CONSTRAINT fk_vc_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID),
-    CONSTRAINT fk_vc_customer FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID)
+    Voucher_ID INT, User_ID INT, PRIMARY KEY (Voucher_ID, User_ID),
+    FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE VOUCHER_MEMBERSHIP_TIER (
-    Voucher_ID INT,
-    Tier_ID INT,
-    PRIMARY KEY (Voucher_ID, Tier_ID),
-    CONSTRAINT fk_vmt_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID),
-    CONSTRAINT fk_vmt_tier FOREIGN KEY (Tier_ID) REFERENCES MEMBERSHIP_TIER(Tier_ID)
+    Voucher_ID INT, Tier_ID INT, PRIMARY KEY (Voucher_ID, Tier_ID),
+    FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Tier_ID) REFERENCES MEMBERSHIP_TIER(Tier_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE PRODUCT_CUSTOMER (
-    Product_ID INT,
-    User_ID INT,
-    PRIMARY KEY (Product_ID, User_ID),
-    CONSTRAINT fk_pc_product FOREIGN KEY (Product_ID) REFERENCES PRODUCT(Product_ID),
-    CONSTRAINT fk_pc_customer FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID)
+    Product_ID INT, User_ID INT, PRIMARY KEY (Product_ID, User_ID),
+    FOREIGN KEY (Product_ID) REFERENCES PRODUCT(Product_ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (User_ID) REFERENCES CUSTOMER(User_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 CREATE TABLE SERVICE_PACKAGE_SHOP (
-    Package_Name VARCHAR(255),
-    Shop_ID INT,
-    PRIMARY KEY (Package_Name, Shop_ID),
-    CONSTRAINT fk_sps_package FOREIGN KEY (Package_Name) REFERENCES SERVICE_PACKAGE(Package_Name),
-    CONSTRAINT fk_sps_shop FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID)
+    Package_Name VARCHAR(255), Shop_ID INT, PRIMARY KEY (Package_Name, Shop_ID),
+    FOREIGN KEY (Package_Name) REFERENCES SERVICE_PACKAGE(Package_Name) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Shop_ID) REFERENCES SHOP_SELL(Shop_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 GO
 
--- 7. Bảng bổ sung
+-- 7. BẢNG BỔ SUNG
 ----------------------------------------------------
 
 CREATE TABLE SHIPMENT_STATUS (
-    Shipment_ID INT,
-    Status_ID INT,
+    Shipment_ID INT NOT NULL,
+    Status_ID INT NOT NULL,
     Status_Name VARCHAR(100),
     Updated_time DATETIME,
     Current_Location VARCHAR(255),
     PRIMARY KEY (Shipment_ID, Status_ID),
     
     CONSTRAINT CK_STATUS_Name CHECK (Status_Name IN ('preparing', 'shipping', 'delivered', 'returned')),
+    -- Xóa Shipment thì xóa luôn Status
     CONSTRAINT fk_status_shipment FOREIGN KEY (Shipment_ID) REFERENCES SHIPMENT_PACKAGE(Shipment_ID)
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
 );
 GO
 
-CREATE TABLE PAYMENT_VOUCHER (
-    Order_ID INT,
-    Voucher_ID INT,
-    PRIMARY KEY (Order_ID, Voucher_ID),
-    
-    CONSTRAINT fk_pv_order FOREIGN KEY (Order_ID) REFERENCES ORDER_PAYMENT(Order_ID),
-    CONSTRAINT fk_pv_voucher FOREIGN KEY (Voucher_ID) REFERENCES VOUCHER(Voucher_ID)
-);
-GO
-
-
 -- ===================================================
--- TRIGGER SCRIPT
+-- 3. TRIGGERS
 -- ===================================================
 
--- TRIGGER 1: Kiểm tra Tồn kho (SKU) và Trạng thái Biến thể khi thêm vào Đơn hàng
-----------------------------------------------------
+-- TRIGGER 1: Kiểm tra Tồn kho (SKU)
 CREATE TRIGGER TR_Check_Stock_On_Insert
 ON ORDER_ITEM
 FOR INSERT
@@ -545,7 +593,6 @@ END;
 GO
 
 -- TRIGGER 2: Kiểm tra khi tạo Đơn hàng (User Status, Voucher)
-----------------------------------------------------
 CREATE TRIGGER TR_Check_Order_Creation
 ON ORDER_PAYMENT
 FOR INSERT
@@ -576,46 +623,12 @@ BEGIN
         RETURN;
     END;
 
-    IF @Voucher_Code_Used IS NOT NULL
-    BEGIN
-        SELECT 
-            @Voucher_Quantity = Quantity,
-            @Voucher_Start = Start_Date,
-            @Voucher_End = Expiration_Date
-        FROM VOUCHER
-        WHERE Voucher_Code = @Voucher_Code_Used;
-
-        IF @@ROWCOUNT = 0
-        BEGIN
-            RAISERROR ('Error (RB 16): Voucher code does not exist.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
-
-        IF @Voucher_Quantity <= 0
-        BEGIN
-            RAISERROR ('Error (RB 16): This voucher has run out of uses.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
-
-        IF GETDATE() NOT BETWEEN @Voucher_Start AND @Voucher_End
-        BEGIN
-            RAISERROR ('Error (RB 16): This voucher is expired or not yet active.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END;
-        
-        UPDATE VOUCHER
-        SET Quantity = Quantity - 1
-        WHERE Voucher_Code = @Voucher_Code_Used;
-    END;
-
+    -- Logic voucher ở bảng Payment_Voucher nên trigger này chỉ kiểm tra User
+    -- Phần kiểm tra Voucher được xử lý ở bảng Payment_Voucher
 END;
 GO
 
 -- TRIGGER 3: Cập nhật Trạng thái Đơn hàng khi Thanh toán thành công
-----------------------------------------------------
 CREATE TRIGGER TR_Update_Order_Status_On_Payment
 ON ORDER_PAYMENT
 FOR UPDATE
@@ -638,7 +651,6 @@ END;
 GO
 
 -- TRIGGER 4: Cập nhật Hạng thành viên khi đơn hàng Hoàn thành
-----------------------------------------------------
 CREATE TRIGGER TR_Update_Membership_On_Order_Complete
 ON ORDER_PAYMENT
 FOR UPDATE
@@ -690,14 +702,13 @@ END;
 GO
 
 -- TRIGGER 5: Kiểm tra Shopee Mall khi thêm/sửa sản phẩm
-----------------------------------------------------
 CREATE TRIGGER TR_Check_description_Product
 ON PRODUCT
 FOR INSERT, UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     IF EXISTS (
         SELECT 1
         FROM inserted i
@@ -716,7 +727,6 @@ END;
 GO
 
 -- TRIGGER 6: Ngăn tạo Vận đơn khi Đơn hàng đã hủy
-----------------------------------------------------
 CREATE TRIGGER TR_Check_Shipment_Creation
 ON SHIPMENT_PACKAGE
 FOR INSERT
@@ -740,7 +750,6 @@ END;
 GO
 
 -- TRIGGER 7: Xác thực Người mua khi viết Đánh giá
-----------------------------------------------------
 CREATE TRIGGER TR_Validate_Review_Creation
 ON PRODUCT_REVIEW
 FOR INSERT
