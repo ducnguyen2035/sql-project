@@ -6,9 +6,8 @@ GO
 -- 1. TRIGGER: VOUCHER MINIMUM SPEND VALIDATION (Ràng buộc Nghiệp vụ)
 
 IF OBJECT_ID('TRG_Validate_Voucher_Min_Spend', 'TR') IS NOT NULL
-    DROP TRIGGER TRG_Validate_Voucher_Min_Spend;
+    DROP TRIGGER TRG_Validate_Voucher_Min_Spend; -- Valid Voucher
 GO
--- 1. TRIGGER: Kiểm tra khoản chi tối thiểu để sử dụng voucher
 
 CREATE TRIGGER TRG_Validate_Voucher_Min_Spend
 ON ORDER_PAYMENT
@@ -31,10 +30,7 @@ BEGIN
         FROM VOUCHER
         WHERE Voucher_Code = @Voucher_Code;
 
-        SELECT @Current_Order_Value = SUM(oi.Quantity * oi.Price_at_Purchase)
-        FROM SHIPMENT_PACKAGE sp
-        JOIN ORDER_ITEM oi ON sp.Shipment_ID = oi.Shipment_ID
-        WHERE sp.Order_ID = @Order_ID;
+        SELECT @Current_Order_Value = Product_value FROM inserted;
 
         IF @Current_Order_Value < @Min_Spend
         BEGIN
@@ -55,13 +51,14 @@ BEGIN
     BEGIN
 
         UPDATE op 
-        SET op.Order_Status = i.Order_Status, op.Payment_Status = i.Payment_Status, op.Voucher_Code = i.Voucher_Code -- Cập nhật các cột cần thiết
-        FROM ORDER_PAYMENT op JOIN inserted i ON op.Order_ID = i.Order_ID;
+        SET op.Order_Status = i.Order_Status, op.Payment_Status = i.Payment_Status, op.Voucher_Code = i.Voucher_Code
+        FROM ORDER_PAYMENT op 
+        JOIN inserted i ON op.Order_ID = i.Order_ID;
     END
 END;
 GO
 
--- 2. TRIGGER: CẬP NHẬT THUỘC TÍNH DẪN XUẤT (Average_Rating)
+-- 2. TRIGGER: Update Product Rating
 
 IF OBJECT_ID('TRG_Update_Product_Rating', 'TR') IS NOT NULL
     DROP TRIGGER TRG_Update_Product_Rating;
@@ -78,13 +75,13 @@ BEGIN
     DECLARE @AffectedProducts TABLE (Product_ID INT);
 
     INSERT INTO @AffectedProducts
-    SELECT DISTINCT P_ID FROM inserted 
+    SELECT DISTINCT P_ID FROM inserted WHERE P_ID IS NOT NULL
     UNION
-    SELECT DISTINCT P_ID FROM deleted;
+    SELECT DISTINCT P_ID FROM deleted WHERE P_ID IS NOT NULL;
 
     UPDATE p
     SET p.Average_Rating = ISNULL((
-        SELECT CAST(AVG(CAST(Rating_Star AS DECIMAL(10, 2))) AS DECIMAL(3, 1))
+        SELECT CAST(AVG(CAST(Rating_Star AS DECIMAL(10, 2))) AS DECIMAL(3, 2))
         FROM PRODUCT_REVIEW pr
         WHERE pr.P_ID = p.Product_ID
     ), 0)
@@ -97,12 +94,10 @@ GO
 
 IF OBJECT_ID('SP_Get_Shop_Order_History', 'P') IS NOT NULL
     DROP PROCEDURE SP_Get_Shop_Order_History;
-GO
+GO 
 
 CREATE PROCEDURE SP_Get_Shop_Order_History
-    @Shop_ID INT,
-    @StartDate DATETIME,
-    @EndDate DATETIME
+    @Shop_ID INT --add date
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -110,7 +105,6 @@ BEGIN
     SELECT 
         o.Order_ID,
         o.Order_Date,
-        u.Full_name AS Buyer_Name,
         sp.Tracking_Number,
         (
             SELECT TOP 1 ss.Status_Name
@@ -121,11 +115,10 @@ BEGIN
         v.Variant_Name,
         oi.Quantity,
         oi.Price_at_Purchase,
-        (oi.Quantity * oi.Price_at_Purchase) AS Total_Item_Amount
+        Final_Item_Price AS Total_Item_Amount
     FROM 
         ORDER_PAYMENT o
-    JOIN 
-        [USER] u ON o.User_ID = u.User_ID
+
     JOIN 
         SHIPMENT_PACKAGE sp ON o.Order_ID = sp.Order_ID
     JOIN 
@@ -133,10 +126,9 @@ BEGIN
     JOIN 
         VARIANT v ON oi.Variant_ID = v.Variant_ID
     JOIN 
-        PRODUCT p ON v.P_ID = p.Product_ID -- Liên kết cuối cùng để lọc theo Shop_ID
+        PRODUCT p ON v.P_ID = p.Product_ID
     WHERE 
         p.Shop_ID = @Shop_ID
-        AND o.Order_Date BETWEEN @StartDate AND @EndDate
     ORDER BY 
         o.Order_Date DESC, o.Order_ID ASC; 
 END;
@@ -161,7 +153,7 @@ BEGIN
         p.Product_ID,
         p.Product_Name,
         c.Category_Name,
-        SUM(oi.Quantity) AS Total_Quantity_Sold, -- Aggregate
+        SUM(oi.Quantity) AS Total_Quantity_Sold,
         SUM(oi.Quantity * oi.Price_at_Purchase) AS Total_Revenue
     FROM 
         PRODUCT p
