@@ -74,13 +74,13 @@ VALUES
 GO
 
 -- 3. SHIPPING_PROVIDER
-INSERT INTO SHIPPING_PROVIDER (Provider_ID, Coverage_Area, Weight_Limit, Size_Limit, Delivery_Method) 
+INSERT INTO SHIPPING_PROVIDER (Provider_ID, Provider_Name, Coverage_Area, Weight_Limit, Size_Limit, Delivery_Method) 
 VALUES
-(1, 'Nationwide', 50, '100x100x100', 'standard'),
-(2, 'Nationwide', 30, '80x80x80', 'economy'),
-(3, 'Nationwide', 30, '80x80x80', 'fast'),
-(4, 'Nationwide', 50, '120x120x120', 'standard'),
-(5, 'HCMC/Hanoi Internal', 20, '50x50x50', 'instant');
+(1,'Lalamove', 'Nationwide', 50, '100x100x100', 'standard'),
+(2,'Ahamove', 'Nationwide', 30, '80x80x80', 'economy'),
+(3,'Ahamove', 'Nationwide', 30, '80x80x80', 'fast'),
+(4,'Lalamove', 'Nationwide', 50, '120x120x120', 'standard'),
+(5,'Ahamove', 'HCMC/Hanoi Internal', 20, '50x50x50', 'instant');
 GO
 
 -- 4. SERVICE_PROVIDER
@@ -195,11 +195,11 @@ VALUES
 GO
 
 -- 16. DRIVER
-INSERT INTO DRIVER (Staff_ID,Full_Name,ID_Number,Driver_License,Provider_ID, Truck_ID, Route_Assigned, Max_weight)
+INSERT INTO DRIVER (Staff_ID,Full_Name,ID_Number,Driver_License,Provider_ID, Driver_Type, Truck_ID, Route_Assigned, Max_weight)
 VALUES
-(301, 10,'Nguyen Van A' ,null,1,null, 'Route HCM-HN', 2000),
-(302, 11,'Doan Thi B'   ,null,2,null, 'Route HCM-DN', 1500),
-(303, 12,'Tran Quoc C'  ,null,3,null, 'Route HN-DN' , 1500);
+(301, 10,'Nguyen Van A' ,null,1,'Shipper',  null, 'Route HCM-HN', 2000),
+(302, 11,'Doan Thi B'   ,null,2,'Truck',    null, 'Route HCM-DN', 1500),
+(303, 12,'Tran Quoc C'  ,null,3,'Shipper',  null, 'Route HN-DN' , 1500);
 GO
 -- 17. PRODUCT
 INSERT INTO PRODUCT (Product_ID, Product_name, Description, Base_Price, Total_Sales, Average_Rating, Base_Image, Product_Status, C_ID, Shop_ID)
