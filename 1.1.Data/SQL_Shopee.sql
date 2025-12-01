@@ -146,12 +146,10 @@ CREATE TABLE CATEGORY_HIERARCHY (
     
     CONSTRAINT CK_CATEGORY_Hierarchy CHECK (Parent_Category_ID != Sub_Category_ID),
     -- Xóa Category cha/con thì xóa luôn quan hệ này
-    CONSTRAINT fk_parent_category FOREIGN KEY (Parent_Category_ID) REFERENCES CATEGORY(Category_ID) 
-        ON DELETE CASCADE 
-        ON UPDATE CASCADE,
+    CONSTRAINT fk_parent_category FOREIGN KEY (Parent_Category_ID) REFERENCES CATEGORY(Category_ID), 
+        
     CONSTRAINT fk_sub_category FOREIGN KEY (Sub_Category_ID) REFERENCES CATEGORY(Category_ID) 
-        ON DELETE CASCADE 
-        ON UPDATE CASCADE
+        
 );
 GO
 
@@ -782,3 +780,4 @@ BEGIN
     END;
 END;
 GO
+
