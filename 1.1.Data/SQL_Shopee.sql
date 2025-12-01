@@ -25,10 +25,10 @@ GO
 
 CREATE TABLE [USER] (
     User_ID INT PRIMARY KEY,
-    ID_number VARCHAR(12) UNIQUE NOT NULL,
-    Phone_number VARCHAR(10) UNIQUE NOT NULL,
-    Email VARCHAR(255) UNIQUE NOT NULL,
-    Full_name VARCHAR(100) NOT NULL,
+    ID_number VARCHAR(50) UNIQUE NULL,
+    Phone_number VARCHAR(50) UNIQUE NULL,
+    Email VARCHAR(255) UNIQUE NULL,
+    Full_name VARCHAR(100) NULL,
     Gender VARCHAR(10),
     Birthday DATE,
     Account_status VARCHAR(50),
