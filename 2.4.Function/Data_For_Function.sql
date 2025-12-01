@@ -5,9 +5,7 @@
 USE [QL_SHOPEE_BTL];
 GO
 
--- ===================================================
--- 1. THÊM CATEGORY (Tổng cộng: 5 + 10 = 15 categories)
--- ===================================================
+-- 1. THÊM CATEGORY
 
 INSERT INTO CATEGORY (Category_ID, Category_name, Category_Image, [Level]) 
 VALUES
@@ -32,12 +30,10 @@ VALUES
 (3, 15); -- Home & Living -> Furniture
 GO
 
-PRINT '✓ Đã thêm 10 categories mới (tổng: 15)';
+PRINT '✓ Đã thêm 10 categories mới';
 GO
 
--- ===================================================
--- 2. THÊM USER VÀ CUSTOMER (Tổng: 3 + 12 = 15 customers)
--- ===================================================
+-- 2. THÊM USER VÀ CUSTOMER
 
 INSERT INTO [USER] (User_ID, ID_number, Phone_number, Email, Full_name, Gender, Birthday, Account_status, Entity_ID)
 VALUES
@@ -71,12 +67,10 @@ VALUES
 (118, 20, 8000000, 3);  -- Gold
 GO
 
-PRINT '✓ Đã thêm 12 customers mới (tổng: 15)';
+PRINT '✓ Đã thêm 12 customers mới';
 GO
 
--- ===================================================
--- 3. THÊM SHOP (Tổng: 2 + 8 = 10 shops)
--- ===================================================
+-- 3. THÊM SHOP
 
 INSERT INTO [USER] (User_ID, ID_number, Phone_number, Email, Full_name, Gender, Birthday, Account_status, Entity_ID)
 VALUES
@@ -102,12 +96,10 @@ VALUES
 (510, 'Pet Corner', 'normal', 'Pet supplies.', 'active', NULL, 3500, 89.0, '888 Pet Rd, Q6, HCM', '8908908908', 'pets@shop.com', 'Warehouse J', 'TAX010', 'Individual', 210);
 GO
 
-PRINT '✓ Đã thêm 8 shops mới (tổng: 10)';
+PRINT '✓ Đã thêm 8 shops mới';
 GO
 
--- ===================================================
--- 4. THÊM PRODUCT (Tổng: 5 + 20 = 25 products)
--- ===================================================
+-- 4. THÊM PRODUCT
 
 INSERT INTO PRODUCT (Product_ID, Product_name, Description, Base_Price, Total_Sales, Average_Rating, Base_Image, Product_Status, C_ID, Shop_ID)
 VALUES
@@ -146,12 +138,10 @@ VALUES
 (1025, 'Building Blocks', 'Educational toy set.', 350000, 75, 4.5, NULL, 'for_sale', 8, 509);
 GO
 
-PRINT '✓ Đã thêm 20 products mới (tổng: 25)';
+PRINT '✓ Đã thêm 20 products mới';
 GO
 
--- ===================================================
--- 5. THÊM VARIANT (Tổng: 6 + 30 = 36 variants)
--- ===================================================
+-- 5. THÊM VARIANT
 
 INSERT INTO VARIANT (Variant_ID, Option_Value_1, Option_Value_2, Variant_Name, Price, SKU, Variant_Status, Variant_Image, P_ID)
 VALUES
@@ -225,12 +215,10 @@ VALUES
 (2035, 'Multi-color', NULL, 'Building Blocks (200pcs)', 500000, 50, 'for_sale', NULL, 1025);
 GO
 
-PRINT '✓ Đã thêm 30 variants mới (tổng: 36)';
+PRINT '✓ Đã thêm 30 variants mới';
 GO
 
--- ===================================================
--- 6. THÊM ORDER_PAYMENT CHO NHIỀU CUSTOMER (Tổng: >20 orders)
--- ===================================================
+-- 6. THÊM ORDER_PAYMENT CHO NHIỀU CUSTOMER
 
 -- Customer 107 (mua Electronics, Fashion)
 INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
