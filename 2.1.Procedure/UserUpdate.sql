@@ -70,24 +70,29 @@ BEGIN
             if exists(select 1 from dbo.[USER] where Email = @Email and User_ID <> @User_ID)
                 throw 53112,'Email already used by another user',1;
         end
+        if @Full_name is not null
+        begin
+            if replace(@Full_name,' ','') like '%[^A-Za-z]%'
+                throw 53113,'Full_name must contain only letters and single spaces between words.',1;
+        end
         if datalength(@Full_name)<>datalength(ltrim(rtrim(@Full_name)))
-            throw 53113,'Full_name must not have leading or trailing spaces.',1;
+            throw 53114,'Full_name must not have leading or trailing spaces.',1;
         if charindex('  ', @Full_name) > 0
-            throw 53114,'Full_name must not contain more than one space between words.',1;
+            throw 53115,'Full_name must not contain more than one space between words.',1;
         if @Gender is not null and @Gender not in ('Other','Female','Male')
-            throw 53115,'Invalid gender, gender must belong to one of three:Other, Female, Male',1;
+            throw 53116,'Invalid gender, gender must belong to one of three:Other, Female, Male',1;
         if @Birthday is not null
         begin
             if @Birthday > cast(getdate()as date)
-                throw 53116,'Birthday cannot be in the future.', 1;
+                throw 53117,'Birthday cannot be in the future.', 1;
             declare @Age int;
             set @Age = datediff(year,@Birthday,getdate())
             - case when dateadd(year,datediff(year,@Birthday,getdate()),@Birthday) > getdate() then 1 else 0 end;
             if @Age < 0 or @Age > 150
-                throw 53117,'Age must be between 0 and 150.', 1;
+                throw 53118,'Age must be between 0 and 150.', 1;
         end
         if @Account_status is not null and @Account_status not in('restricted','warning','active')
-            throw 53118,'Invalid account status, account status must belong to one of three status:restricted, warning, active',1;
+            throw 53119,'Invalid account status, account status must belong to one of three status:restricted, warning, active',1;
         Update dbo.[USER]
         SET
             ID_number = COALESCE(@ID_number, ID_number),

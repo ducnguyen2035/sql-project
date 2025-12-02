@@ -60,24 +60,29 @@ BEGIN
         end
         if @Full_name is null or len(ltrim(rtrim(@Full_name)))=0
             throw 53013,'Full_name is required',1;
+        if @Full_name is not null
+        begin
+            if replace(@Full_name,' ','') like '%[^A-Za-z]%'
+                throw 53014,'Full_name must contain only letters and single spaces between words.',1;
+        end
         if datalength(@Full_name)<>datalength(ltrim(rtrim(@Full_name)))
-            throw 53014,'Full_name must not have leading or trailing spaces.',1;
+            throw 53015,'Full_name must not have leading or trailing spaces.',1;
         if charindex('  ',@Full_name)>0
-            throw 53015,'Full_name must not contain more than one space between words.',1;
+            throw 53016,'Full_name must not contain more than one space between words.',1;
         if @Gender not in ('Other','Female','Male')
-            throw 53016,'Invalid Gender, gender must belong to one of three:Other, Female, Male',1;
+            throw 53017,'Invalid Gender, gender must belong to one of three:Other, Female, Male',1;
         if @Birthday is not null
         begin
             if @Birthday > cast(getdate()as date)
-                THROW 53017,'Birthday cannot be in the future.', 1;
-            DECLARE @Age int;
+                throw 53018,'Birthday cannot be in the future.', 1;
+            declare @Age int;
             set @Age = datediff(year,@Birthday,getdate())
             - case when dateadd(year,datediff(year,@Birthday,getdate()),@Birthday) > getdate() then 1 else 0 end;
             if @Age < 0 or @Age > 150
-                THROW 53018,'Age must be between 0 and 150.', 1;
+                throw 53019,'Age must be between 0 and 150.', 1;
         end
         if @Account_status not in('restricted','warning','active')
-            throw 53019,'Invalid account status, account status must belong to one of three status:restricted, warning, active',1;
+            throw 53020,'Invalid account status, account status must belong to one of three status:restricted, warning, active',1;
         SELECT @NewUserID = ISNULL(MAX(User_ID), 0) + 1 FROM dbo.[USER];
         INSERT INTO dbo.[USER] (User_ID,ID_number, Phone_number, Email, Full_name, Gender, Birthday, Account_status, Entity_ID)
         VALUES (@NewUserID,@ID_number, @Phone_number, @Email, @Full_name, @Gender, @Birthday, @Account_status, @Entity_ID);
