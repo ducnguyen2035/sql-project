@@ -181,6 +181,30 @@ INSERT INTO PRODUCT_REVIEW VALUES
 INSERT INTO PAYMENT_VOUCHER VALUES
 (1, 1); 
 
+-- Data test procedure
+IF NOT EXISTS (SELECT 1 FROM [USER] WHERE User_ID IN (801, 802, 803))
+BEGIN
+    INSERT INTO [USER] (User_ID, ID_number, Phone_number, Email, Full_name, Entity_ID, Account_status) VALUES
+    (801, 'ID801', '0980101010', 'vip@test.com', 'Nguyen Van Dai Gia', 1, 'active'),
+    (802, 'ID802', '0980202020', 'normal@test.com', 'Tran Van Trung Luu', 1, 'active'),
+    (803, 'ID803', '0980303030', 'tiny@test.com', 'Le Van Tieu Gia', 1, 'active');
+END
+
+-- 2. Tạo Đơn hàng năm 2025 (Chỉ cần tạo Payment là đủ để test procedure này)
+DELETE FROM ORDER_PAYMENT WHERE User_ID IN (801, 802, 803);
+
+-- User 801: Mua đơn 50 Triệu
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9901, '2025-05-01', 'completed', 9901, 'Bank Transfer', 'success', 'Villa Quan 7', 50000000, 50000000, 0, 0, 801);
+
+-- User 802: Mua đơn 10 Triệu
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9902, '2025-06-01', 'completed', 9902, 'Shopee Pay', 'success', 'Chung cu Quan 2', 10000000, 10000000, 0, 0, 802);
+
+-- User 803: Mua đơn 500k
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9903, '2025-07-01', 'completed', 9903, 'COD', 'success', 'Phong tro Go Vap', 500000, 500000, 0, 0, 803);
+
 GO
 
 
