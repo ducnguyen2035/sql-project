@@ -13,7 +13,7 @@
 	RETURNS NVARCHAR(MAX)
 	AS
 	BEGIN
- 		-- 1. KHAI BÁO CÁC BIẾN CẦN DÙNG
+ 		--  KHAI BÁO CÁC BIẾN CẦN DÙNG
  		DECLARE @productID INT;
  
  		-- Thông tin sản phẩm (Được SELECT INTO trong vòng lặp)
@@ -27,7 +27,7 @@
  		DECLARE @recommendedProducts NVARCHAR(MAX) = '[]';
  		DECLARE @productJSON NVARCHAR(1000);
  
- 		-- 2. KIỂM TRA THAM SỐ ĐẦU VÀO (YÊU CẦU BTL: IF)
+ 		--  KIỂM TRA THAM SỐ ĐẦU VÀO (YÊU CẦU BTL: IF)
  
  		-- Kiểm tra customer_id có tồn tại không
  		IF NOT EXISTS (SELECT 1 FROM CUSTOMER WHERE User_ID = @customerID)
@@ -39,7 +39,7 @@
  		IF @limitRange IS NULL OR @limitRange <= 0
    		SET @limitRange = 10;
  
-	-- 3. TẠO TỔ HỢP ID CỦA CÁC SẢN PHẨM ĐƯỢC ĐỀ XUẤT
+	--  TẠO TỔ HỢP ID CỦA CÁC SẢN PHẨM ĐƯỢC ĐỀ XUẤT
 	-- Lưu ý: Các ID sản phẩm là khác nhau (GROUP BY), và có trạng thái là 'for_sale' (Active).
 
 
@@ -92,7 +92,7 @@
 	) AS AllProducts
 	GROUP BY Product_ID; -- Nhóm lại để xử lý trùng lặp và chọn MAX(Priority)
  
-	-- 4. TẠO VÒNG LẶP ĐỂ THÊM THÔNG TIN CÁC SẢN PHẨM VÀO JSON
+	--  TẠO VÒNG LẶP ĐỂ THÊM THÔNG TIN CÁC SẢN PHẨM VÀO JSON
  
 	DECLARE productCursor CURSOR LOCAL FAST_FORWARD READ_ONLY FOR
  		SELECT TOP (@limitRange) Product_ID
@@ -147,8 +147,102 @@
  		CLOSE productCursor;
  		DEALLOCATE productCursor;
  
- 		-- 6. TRẢ VỀ recommended_products (Output)
+ 		-- TRẢ VỀ recommended_products (Output)
  
  		RETURN '{"status": true, "recommendedProducts": ' + @recommendedProducts + '}';
 	END;
 	GO
+
+-- ===================================================
+-- HÀM 2: TÍNH RATING TRUNG BÌNH SẢN PHẨM
+-- Mục đích: Có thể dùng để so sánh rating trung bình hiện tại của sản phẩm khi mới ra mắt với rating trung bình hiện tại
+-- ===================================================
+USE [QL_SHOPEE_BTL]
+GO
+
+CREATE OR ALTER FUNCTION CalculateProductAverageRating
+(
+	-- Tham số đầu vào ( YÊU CẦU )
+    @Product_ID INT,
+    @StartDate DATETIME,
+    @EndDate DATETIME
+)
+RETURNS NVARCHAR(100)
+AS
+BEGIN
+	-- Khai báo các biến
+    DECLARE @AvgRating DECIMAL(3, 2) = 0,
+			@ReviewCount INT = 0,
+			@TotalStars INT = 0,
+			@CurrentStar INT,
+			@ReviewDate DATETIME;
+    
+    -- Kiểm tra tham số đầu vào ( YÊU CẦU )
+    -- Kiểm tra Product_ID hợp lệ
+    IF @Product_ID <= 0
+        RETURN '{"status": false, "code": -2, "message": "Invalid Product ID."}';
+    
+    -- Kiểm tra Product_ID có tồn tại không
+    IF NOT EXISTS (SELECT 1 FROM PRODUCT WHERE Product_ID = @Product_ID)
+        RETURN '{"status": false, "code": -1, "message": "Product not found."}';
+    
+    -- Kiểm tra tham số ngày
+    IF @StartDate IS NULL OR @EndDate IS NULL
+        RETURN '{"status": false, "code": -3, "message": "Missing date parameter."}';
+    
+    -- Kiểm tra logic ngày
+    IF @StartDate > @EndDate
+        RETURN '{"status": false, "code": -4, "message": "StartDate must not be greater than EndDate."}';
+    
+    -- Kiểm tra khoảng thời gian tối thiểu 1 tháng (30 ngày)
+    IF DATEDIFF(DAY, @StartDate, @EndDate) < 30
+        RETURN '{"status": false, "code": -5, "message": "The time period must be at least 30 days."}';
+    -- Kiểm tra nếu sản phẩm chưa có bất kỳ đánh giá nào trong khoảng thời gian
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM PRODUCT_REVIEW 
+        WHERE P_ID = @Product_ID
+            AND Review_Date >= @StartDate
+            AND Review_Date <= @EndDate
+    )
+        RETURN '{"status": true,' + ' "AvgRating": 0.00}';
+
+    -- Khai báo và sử dụng Con trỏ duyệt qua Rating_Star của sản phẩm ( YÊU CẦU )
+    DECLARE rating_cursor CURSOR LOCAL FAST_FORWARD READ_ONLY FOR
+        SELECT 
+            Rating_Star,
+            Review_Date
+        FROM PRODUCT_REVIEW
+        WHERE P_ID = @Product_ID
+            AND Rating_Star BETWEEN 1 AND 5
+            AND Review_Date >= @StartDate
+            AND Review_Date <= @EndDate
+        ORDER BY Review_Date DESC; -- Sắp xếp theo ngày mới nhất 
+    
+    OPEN rating_cursor;
+    FETCH NEXT FROM rating_cursor INTO @CurrentStar, @ReviewDate;
+    
+    -- LOOP ( YÊU CẦU )
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- IF: Kiểm tra rating hợp lệ (YÊU CẦU)
+        IF @CurrentStar IS NOT NULL AND @CurrentStar BETWEEN 1 AND 5
+        BEGIN
+            -- Tích lũy tổng số sao và tổng số lượt đánh giá
+            SET @TotalStars = @TotalStars + @CurrentStar;
+            SET @ReviewCount = @ReviewCount + 1;
+        END;
+        
+        FETCH NEXT FROM rating_cursor INTO @CurrentStar, @ReviewDate;
+    END;
+    
+    CLOSE rating_cursor;
+    DEALLOCATE rating_cursor;
+    
+    IF @ReviewCount > 0
+	-- Tính điểm trung bình và làm tròn
+        SET @AvgRating = ROUND(CAST(@TotalStars AS DECIMAL(10,2)) / @ReviewCount, 2);
+    
+    RETURN '{"status": true,' + ' "AvgRating": ' + CAST(@AvgRating AS VARCHAR(10)) + '}';
+END;
+GO
