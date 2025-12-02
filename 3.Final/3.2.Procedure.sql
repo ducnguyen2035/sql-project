@@ -1,3 +1,6 @@
+USE [QL_SHOPEE_BTL];
+GO
+
 -- Thủ tục thêm vào bảng user
 CREATE OR ALTER   PROCEDURE [dbo].[usp_User_Insert]
 	@ID_number VARCHAR(50)=null,
@@ -284,8 +287,6 @@ END;
 GO
 
 --  THỦ TỤC 2
-USE [QL_SHOPEE_BTL]
-GO
 
 IF OBJECT_ID('SP_Get_Potential_Vip_Users', 'P') IS NOT NULL
     DROP PROCEDURE SP_Get_Potential_Vip_Users;
