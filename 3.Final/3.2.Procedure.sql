@@ -1,3 +1,4 @@
+-- Thủ tục thêm vào bảng user
 CREATE OR ALTER   PROCEDURE [dbo].[usp_User_Insert]
 	@ID_number VARCHAR(50)=null,
     @Phone_number VARCHAR(50)=null,
@@ -92,7 +93,7 @@ BEGIN
 end catch;
 END;
 GO
-
+--- Thủ tục cập nhật bảng user
 CREATE OR ALTER   PROCEDURE [dbo].[usp_User_Update]
     @User_ID INT,
     @ID_number VARCHAR(50) =null,
@@ -206,7 +207,7 @@ begin catch
 end catch;
 end;
 GO
-
+--- Thủ tục xóa user
 CREATE OR ALTER PROCEDURE [dbo].[usp_User_Delete]
     @User_ID INT
 AS
