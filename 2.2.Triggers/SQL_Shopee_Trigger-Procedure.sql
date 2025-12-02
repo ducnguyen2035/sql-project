@@ -134,49 +134,40 @@ BEGIN
 END;
 GO
 
--- 4. THỦ TỤC 2: BÁO CÁO CÁC SẢN PHẨM CÓ DOANH THU CAO 
-
-IF OBJECT_ID('SP_Report_Top_Selling_Products', 'P') IS NOT NULL
-    DROP PROCEDURE SP_Report_Top_Selling_Products;
+-- 4. THỦ TỤC 2
+USE [QL_SHOPEE_BTL]
 GO
 
-CREATE PROCEDURE SP_Report_Top_Selling_Products
-    @Shop_ID INT,
-    @Month INT,
-    @Year INT,
-    @Min_Revenue DECIMAL(15, 2)
+IF OBJECT_ID('SP_Get_Potential_Vip_Users', 'P') IS NOT NULL
+    DROP PROCEDURE SP_Get_Potential_Vip_Users;
+GO
+
+CREATE PROCEDURE SP_Get_Potential_Vip_Users
+    @Year INT,                  -- Năm cần báo cáo
+    @Min_Spending DECIMAL(15,2) -- Mức chi tiêu tối thiểu để được coi là VIP
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- YÊU CẦU: 1 câu truy vấn hội tụ đủ các mệnh đề
     SELECT 
-        p.Product_ID,
-        p.Product_Name,
-        c.Category_Name,
-        SUM(oi.Quantity) AS Total_Quantity_Sold,
-        SUM(oi.Quantity * oi.Price_at_Purchase) AS Total_Revenue
+        u.User_ID,
+        u.Full_name,
+        u.Email,
+        COUNT(o.Order_ID) AS [Tong_So_Don],         -- 1. Aggregate Function (COUNT)
+        SUM(o.Payed_value) AS [Tong_Chi_Tieu]       -- 1. Aggregate Function (SUM)
     FROM 
-        PRODUCT p
+        [USER] u
     JOIN 
-        CATEGORY c ON p.C_ID = c.Category_ID
-    JOIN 
-        VARIANT v ON p.Product_ID = v.P_ID
-    JOIN 
-        ORDER_ITEM oi ON v.Variant_ID = oi.Variant_ID
-    JOIN 
-        SHIPMENT_PACKAGE sp ON oi.Shipment_ID = sp.Shipment_ID
-    JOIN 
-        ORDER_PAYMENT o ON sp.Order_ID = o.Order_ID
+        ORDER_PAYMENT o ON u.User_ID = o.User_ID    -- 6. Liên kết 2 bảng trở lên ([USER] và ORDER_PAYMENT)
     WHERE 
-        p.Shop_ID = @Shop_ID -- Mệnh đề WHERE
-        AND MONTH(o.Order_Date) = @Month
-        AND YEAR(o.Order_Date) = @Year
-        AND o.Order_Status = 'completed'
+        o.Order_Status = 'completed'                -- 4. WHERE (Lọc đơn đã hoàn thành)
+        AND YEAR(o.Order_Date) = @Year              -- 4. WHERE (Lọc theo năm)
     GROUP BY 
-        p.Product_ID, p.Product_Name, c.Category_Name -- Mệnh đề GROUP BY
+        u.User_ID, u.Full_name, u.Email             -- 2. GROUP BY (Gom nhóm theo User)
     HAVING 
-        SUM(oi.Quantity * oi.Price_at_Purchase) >= @Min_Revenue -- Mệnh đề HAVING
+        SUM(o.Payed_value) >= @Min_Spending         -- 3. HAVING (Lọc trên kết quả tổng hợp: Chi tiêu > Mức yêu cầu)
     ORDER BY 
-        Total_Revenue DESC; -- Mệnh đề ORDER BY
+        [Tong_Chi_Tieu] DESC;                       -- 5. ORDER BY (Sắp xếp người giàu nhất lên đầu)
 END;
 GO
