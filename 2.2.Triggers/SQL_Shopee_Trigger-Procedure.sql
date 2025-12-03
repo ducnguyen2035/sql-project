@@ -11,49 +11,62 @@ GO
 
 CREATE TRIGGER TRG_Validate_Voucher_Min_Spend
 ON ORDER_PAYMENT
-INSTEAD OF INSERT, UPDATE
+FOR INSERT, UPDATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM inserted WHERE Voucher_Code IS NOT NULL)
+    IF UPDATE(Voucher_Code) OR UPDATE(Product_value)
     BEGIN
-        DECLARE @Order_ID INT;
-        DECLARE @Voucher_Code VARCHAR(50);
-        DECLARE @Min_Spend DECIMAL(15, 2);
-        DECLARE @Current_Order_Value DECIMAL(15, 2);
-        DECLARE @MinSpendStr VARCHAR(50);
-
-        SELECT @Order_ID = Order_ID, @Voucher_Code = Voucher_Code FROM inserted;
-
-        SELECT @Min_Spend = Minimum_Order_Value
-        FROM VOUCHER
-        WHERE Voucher_Code = @Voucher_Code;
-
-        SELECT @Current_Order_Value = Product_value FROM inserted;
-
-        IF @Current_Order_Value < @Min_Spend
+        -- CHECK 1: KIỂM TRA MÃ VOUCHER CÓ TỒN TẠI TRONG HỆ THỐNG KHÔNG?
+        -- Logic: Nếu có mã voucher (IS NOT NULL) nhưng tìm trong bảng VOUCHER không thấy -> Lỗi
+        IF EXISTS (
+            SELECT 1 
+            FROM inserted i 
+            WHERE i.Voucher_Code IS NOT NULL 
+              AND NOT EXISTS (SELECT 1 FROM VOUCHER v WHERE v.Voucher_Code = i.Voucher_Code)
+        )
         BEGIN
-            SET @MinSpendStr = CAST(@Min_Spend AS VARCHAR(50));
-            RAISERROR ('Lỗi Nghiệp vụ (RB 15): Giá trị tiền hàng chưa đạt mức tối thiểu (%s) để áp dụng Voucher này.', 16, 1, @MinSpendStr);
+            DECLARE @Non_Exist_Code VARCHAR(50);
+            SELECT TOP 1 @Non_Exist_Code = Voucher_Code FROM inserted WHERE Voucher_Code IS NOT NULL;
+            
+            RAISERROR ('Lỗi Nghiệp vụ: Mã Voucher "%s" không tồn tại trong hệ thống. Vui lòng kiểm tra lại.', 16, 1, @Non_Exist_Code);
             ROLLBACK TRANSACTION;
             RETURN;
-        END;
-    END;
+        END
 
+        -- CHECK 2: KIỂM TRA GIÁ TRỊ TỐI THIỂU (MIN SPEND) & TỐI ĐA (MAX SPEND)
+        IF EXISTS (
+            SELECT 1
+            FROM inserted i
+            JOIN VOUCHER v ON i.Voucher_code = v.Voucher_Code
+            WHERE 
+                i.Product_value < v.Minimum_Order_Value
+                OR 
+                (v.Maximum_Order_Value > 0 AND i.Product_value > v.Maximum_Order_Value)
+        )
+        BEGIN
+            DECLARE @Err_Voucher VARCHAR(50);
+            DECLARE @Min_Spend VARCHAR(50);
+            DECLARE @Max_Spend VARCHAR(50);
+            DECLARE @Current_Value VARCHAR(50);
+            
+            SELECT TOP 1 
+                @Err_Voucher = i.Voucher_code,
+                @Min_Spend = CAST(v.Minimum_Order_Value AS VARCHAR(50)),
+                @Max_Spend = CAST(v.Maximum_Order_Value AS VARCHAR(50)),
+                @Current_Value = CAST(i.Product_value AS VARCHAR(50))
+            FROM inserted i
+            JOIN VOUCHER v ON i.Voucher_code = v.Voucher_Code
+            WHERE i.Product_value < v.Minimum_Order_Value 
+               OR (v.Maximum_Order_Value > 0 AND i.Product_value > v.Maximum_Order_Value);
 
-    IF EXISTS (SELECT 1 FROM inserted) AND NOT EXISTS (SELECT 1 FROM deleted)
-    BEGIN
-
-        INSERT INTO ORDER_PAYMENT SELECT * FROM inserted;
-    END
-    ELSE IF EXISTS (SELECT 1 FROM inserted) AND EXISTS (SELECT 1 FROM deleted)
-    BEGIN
-
-        UPDATE op 
-        SET op.Order_Status = i.Order_Status, op.Payment_Status = i.Payment_Status, op.Voucher_Code = i.Voucher_Code
-        FROM ORDER_PAYMENT op 
-        JOIN inserted i ON op.Order_ID = i.Order_ID;
+            RAISERROR ('Lỗi Nghiệp vụ (RB 15): Voucher %s yêu cầu đơn từ %s đến %s, nhưng giá trị hiện tại là %s.', 
+                        16, 1, @Err_Voucher, @Min_Spend, @Max_Spend, @Current_Value);
+            
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
     END
 END;
 GO
@@ -97,7 +110,9 @@ IF OBJECT_ID('SP_Get_Shop_Order_History', 'P') IS NOT NULL
 GO 
 
 CREATE PROCEDURE SP_Get_Shop_Order_History
-    @Shop_ID INT --add date
+    @Shop_ID INT,
+    @Start_date DATETIME,
+    @End_date DATETIME
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -118,7 +133,6 @@ BEGIN
         Final_Item_Price AS Total_Item_Amount
     FROM 
         ORDER_PAYMENT o
-
     JOIN 
         SHIPMENT_PACKAGE sp ON o.Order_ID = sp.Order_ID
     JOIN 
@@ -129,6 +143,7 @@ BEGIN
         PRODUCT p ON v.P_ID = p.Product_ID
     WHERE 
         p.Shop_ID = @Shop_ID
+        AND o.Order_Date BETWEEN @Start_date AND @End_date
     ORDER BY 
         o.Order_Date DESC, o.Order_ID ASC; 
 END;
