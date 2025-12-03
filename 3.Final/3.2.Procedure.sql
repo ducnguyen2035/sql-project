@@ -293,13 +293,30 @@ IF OBJECT_ID('SP_Get_Potential_Vip_Users', 'P') IS NOT NULL
 GO
 
 CREATE PROCEDURE SP_Get_Potential_Vip_Users
-    @Year INT,                  -- Năm cần báo cáo
-    @Min_Spending DECIMAL(15,2) -- Mức chi tiêu tối thiểu để được coi là VIP
+    @Year INT, 
+    @Min_Spending DECIMAL(15,2)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- YÊU CẦU: 1 câu truy vấn hội tụ đủ các mệnh đề
+
+    -- [Ràng buộc 1]: Mức chi tiêu phải là số dương
+    IF @Min_Spending <= 0
+    BEGIN
+        RAISERROR('Lỗi tham số: Mức chi tiêu tối thiểu (@Min_Spending) phải lớn hơn 0.', 16, 1);
+        RETURN;
+    END
+
+    -- [Ràng buộc 2]: Năm báo cáo phải hợp lý (Từ 2015 đến hiện tại)
+    DECLARE @CurrentYear INT = YEAR(GETDATE());
+    
+    IF @Year < 2015 OR @Year > @CurrentYear
+    BEGIN
+        DECLARE @Err VARCHAR(200) = 'Lỗi tham số: Năm báo cáo (@Year) phải từ 2015 đến năm hiện tại (' + CAST(@CurrentYear AS VARCHAR) + ').';
+        RAISERROR(@Err, 16, 1);
+        RETURN;
+    END
+    
     SELECT 
         u.User_ID,
         u.Full_name,
@@ -311,13 +328,13 @@ BEGIN
     JOIN 
         ORDER_PAYMENT o ON u.User_ID = o.User_ID    -- 6. Liên kết 2 bảng trở lên ([USER] và ORDER_PAYMENT)
     WHERE 
-        o.Order_Status = 'completed'                -- 4. WHERE (Lọc đơn đã hoàn thành)
-        AND YEAR(o.Order_Date) = @Year              -- 4. WHERE (Lọc theo năm)
+        o.Order_Status = 'completed'                -- 4. WHERE
+        AND YEAR(o.Order_Date) = @Year              -- 4. WHERE
     GROUP BY 
-        u.User_ID, u.Full_name, u.Email             -- 2. GROUP BY (Gom nhóm theo User)
+        u.User_ID, u.Full_name, u.Email             -- 2. GROUP BY
     HAVING 
-        SUM(o.Payed_value) >= @Min_Spending         -- 3. HAVING (Lọc trên kết quả tổng hợp: Chi tiêu > Mức yêu cầu)
+        SUM(o.Payed_value) >= @Min_Spending         -- 3. HAVING
     ORDER BY 
-        [Tong_Chi_Tieu] DESC;                       -- 5. ORDER BY (Sắp xếp người giàu nhất lên đầu)
+        [Tong_Chi_Tieu] DESC;                       -- 5. ORDER BY
 END;
 GO
