@@ -156,7 +156,7 @@ CREATE TABLE PRODUCT (
     Base_Price DECIMAL(10, 2) NOT NULL,
     Total_Sales INT DEFAULT 0,
     Average_Rating DECIMAL(3, 2),
-    Base_Image VARBINARY(MAX), 
+    Base_Image NVARCHAR(MAX), 
     Product_Status VARCHAR(50),
     C_ID INT NOT NULL, 
     Shop_ID INT NOT NULL,

@@ -201,11 +201,11 @@ GO
 -- 17. PRODUCT
 INSERT INTO PRODUCT (Product_ID, Product_name, Description, Base_Price, Total_Sales, Average_Rating, Base_Image, Product_Status, C_ID, Shop_ID)
 VALUES
-(1001, 'Smartphone Model X', 'Latest generation smartphone.', 10000000, 0, 0, NULL, 'for_sale', 5, 501),
-(1002, 'Mens T-Shirt', '100% Cotton T-Shirt.', 150000, 0, 0, NULL, 'for_sale', 2, 502),
-(1003, 'Luxury Sofa', 'High-quality leather sofa.', 5000000, 0, 0, NULL, 'for_sale', 3, 501),
-(1004, 'Vitamin C Serum', 'Skincare serum for beauty.', 300000, 0, 0, NULL, 'for_sale', 4, 502),
-(1005, 'Laptop Pro', 'High-end laptop for professionals.', 25000000, 0, 0, NULL, 'discontinued', 1, 501);
+(1001, 'Smartphone Model X', 'Latest generation smartphone.', 10000000, 0, 0, '3.Final/Image/iphone-x-64gb.jpg' , 'for_sale', 5, 501),
+(1002, 'Mens T-Shirt', '100% Cotton T-Shirt.', 150000, 0, 0, '3.Final/Image/Tshirt.jpg', 'for_sale', 2, 502),
+(1003, 'Luxury Sofa', 'High-quality leather sofa.', 5000000, 0, 0, '3.Final/Image/sofa_luxury.jpg', 'for_sale', 3, 501),
+(1004, 'Vitamin C Serum', 'Skincare serum for beauty.', 300000, 0, 0, '3.Final/Image/serum-vitamin-c-han-quoc.jpg', 'for_sale', 4, 502),
+(1005, 'Laptop Pro', 'High-end laptop for professionals.', 25000000, 0, 0, '3.Final/Image/macbook_pro.jpg', 'discontinued', 1, 501);
 GO
 
 -- 18. VOUCHER
@@ -448,38 +448,35 @@ GO
 INSERT INTO PRODUCT (Product_ID, Product_name, Description, Base_Price, Total_Sales, Average_Rating, Base_Image, Product_Status, C_ID, Shop_ID)
 VALUES
 -- Electronics (C_ID = 1, 5, 11, 12)
-(1006, 'Gaming Laptop', 'High-performance gaming laptop.', 30000000, 15, 4.5, NULL, 'for_sale', 11, 503),
-(1007, 'Wireless Mouse', 'Ergonomic wireless mouse.', 200000, 50, 4.2, NULL, 'for_sale', 1, 503),
-(1008, 'Bluetooth Headphones', 'Noise-cancelling headphones.', 1500000, 30, 4.7, NULL, 'for_sale', 12, 503),
-(1009, 'USB-C Cable', 'Fast charging cable.', 50000, 100, 4.0, NULL, 'for_sale', 1, 503),
-(1010, 'Tablet 10-inch', 'Android tablet.', 5000000, 20, 4.3, NULL, 'for_sale', 5, 503),
-
+(1006, 'Gaming Laptop', 'High-performance gaming laptop.', 30000000, 15, 4.5, '3.Final/Image/laptop_gaming.jpg', 'for_sale', 11, 503),
+(1007, 'Wireless Mouse', 'Ergonomic wireless mouse.', 200000, 50, 4.2, '3.Final/Image/WirelessMouse.jpg', 'for_sale', 1, 503),
+(1008, 'Bluetooth Headphones', 'Noise-cancelling headphones.', 1500000, 30, 4.7, '3.Final/Image/BluetoothHeadphones.jpg', 'for_sale', 12, 503),
+(1009, 'USB-C Cable', 'Fast charging cable.', 50000, 100, 4.0, '3.Final/Image/USB-CCable.jpeg', 'for_sale', 1, 503),
+(1010, 'Tablet 10-inch', 'Android tablet.', 5000000, 20, 4.3, '3.Final/Image/Tablet10-inch.jpg', 'for_sale', 5, 503),
 -- Fashion (C_ID = 2, 13)
-(1011, 'Womens Dress', 'Elegant evening dress.', 500000, 40, 4.6, NULL, 'for_sale', 13, 504),
-(1012, 'Mens Jeans', 'Classic denim jeans.', 350000, 60, 4.4, NULL, 'for_sale', 2, 504),
-(1013, 'Summer Hat', 'Stylish sun hat.', 120000, 80, 4.1, NULL, 'for_sale', 2, 504),
-(1014, 'Leather Wallet', 'Premium leather wallet.', 250000, 45, 4.5, NULL, 'for_sale', 2, 504),
+(1011, 'Womens Dress', 'Elegant evening dress.', 500000, 40, 4.6, '3.Final/Image/WomensDress.jpg', 'for_sale', 13, 504),
+(1012, 'Mens Jeans', 'Classic denim jeans.', 350000, 60, 4.4, '3.Final/Image/MensJeans.jpg', 'for_sale', 2, 504),
+(1013, 'Summer Hat', 'Stylish sun hat.', 120000, 80, 4.1, '3.Final/Image/SummerHat.jpg', 'for_sale', 2, 504),
+(1014, 'Leather Wallet', 'Premium leather wallet.', 250000, 45, 4.5, '3.Final/Image/LeatherWallet.jpg', 'for_sale', 2, 504),
 
 -- Home & Living (C_ID = 3, 15)
-(1015, 'Wooden Table', 'Solid wood dining table.', 8000000, 10, 4.8, NULL, 'for_sale', 15, 505),
-(1016, 'Office Chair', 'Comfortable office chair.', 2500000, 25, 4.4, NULL, 'for_sale', 15, 505),
-(1017, 'LED Lamp', 'Modern LED desk lamp.', 300000, 70, 4.2, NULL, 'for_sale', 3, 505),
+(1015, 'Wooden Table', 'Solid wood dining table.', 8000000, 10, 4.8, '3.Final/Image/WoodenTable.jpg', 'for_sale', 15, 505),
+(1016, 'Office Chair', 'Comfortable office chair.', 2500000, 25, 4.4, '3.Final/Image/OfficeChair.jpg', 'for_sale', 15, 505),
+(1017, 'LED Lamp', 'Modern LED desk lamp.', 300000, 70, 4.2, '3.Final/Image/LEDLamp.webp', 'for_sale', 3, 505),
 
 -- Health & Beauty (C_ID = 4, 14)
-(1018, 'Face Cream', 'Anti-aging face cream.', 450000, 55, 4.6, NULL, 'for_sale', 14, 506),
-(1019, 'Shampoo 500ml', 'Natural hair shampoo.', 180000, 90, 4.3, NULL, 'for_sale', 4, 506),
-(1020, 'Massage Oil', 'Relaxing massage oil.', 220000, 35, 4.5, NULL, 'for_sale', 4, 506),
+(1018, 'Face Cream', 'Anti-aging face cream.', 450000, 55, 4.6, '3.Final/Image/FaceCream.jpg', 'for_sale', 14, 506),
+(1019, 'Shampoo 500ml', 'Natural hair shampoo.', 180000, 90, 4.3, '3.Final/Image/Shampoo500ml.jpg', 'for_sale', 4, 506),
+(1020, 'Massage Oil', 'Relaxing massage oil.', 220000, 35, 4.5, '3.Final/Image/MassageOil.png', 'for_sale', 4, 506),
 
 -- Sports (C_ID = 6)
-(1021, 'Yoga Mat', 'Non-slip yoga mat.', 400000, 65, 4.7, NULL, 'for_sale', 6, 507),
-(1022, 'Dumbbell Set', '10kg dumbbell set.', 800000, 30, 4.4, NULL, 'for_sale', 6, 507),
-
+(1021, 'Yoga Mat', 'Non-slip yoga mat.', 400000, 65, 4.7, '3.Final/Image/YogaMat.jpg', 'for_sale', 6, 507),
+(1022, 'Dumbbell Set', '10kg dumbbell set.', 800000, 30, 4.4, '3.Final/Image/DumbbellSet.jpg', 'for_sale', 6, 507),
 -- Books (C_ID = 7)
-(1023, 'Fiction Novel', 'Bestselling fiction.', 150000, 120, 4.8, NULL, 'for_sale', 7, 508),
-(1024, 'Self-Help Book', 'Inspirational guide.', 180000, 95, 4.6, NULL, 'for_sale', 7, 508),
-
+(1023, 'Fiction Novel', 'Bestselling fiction.', 150000, 120, 4.8, '3.Final/Image/FictionNovel.jpg', 'for_sale', 7, 508),
+(1024, 'Self-Help Book', 'Inspirational guide.', 180000, 95, 4.6, '3.Final/Image/Self-HelpBook.jpg', 'for_sale', 7, 508),
 -- Toys (C_ID = 8)
-(1025, 'Building Blocks', 'Educational toy set.', 350000, 75, 4.5, NULL, 'for_sale', 8, 509);
+(1025, 'Building Blocks', 'Educational toy set.', 350000, 75, 4.5, '3.Final/Image/BuildingBlocks.jpg', 'for_sale', 8, 509);
 GO
 
 PRINT '✓ Đã thêm 20 products mới';
