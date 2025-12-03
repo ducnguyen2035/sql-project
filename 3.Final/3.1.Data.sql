@@ -211,11 +211,11 @@ GO
 -- 18. VOUCHER
 INSERT INTO VOUCHER (Voucher_ID, Quantity, Voucher_Code, Voucher_Type, Discount_Type, Minimum_Order_Value, Maximum_Order_Value, Start_Date, Expiration_Date, Program_ID)
 VALUES
-(1, 100, 'SALE1212', 'Platform', 'percent', 100000, 50000, '2025-12-12 00:00:00', '2025-12-12 23:59:59', 1),
-(2, 50, 'TECHSALE', 'Shop', 'fixed', 5000000, 1000000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 2),
-(3, 500, 'FASHION20K', 'Shop', 'fixed', 150000, 20000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 3),
-(4, 10, 'EXPIREDVOUCHER', 'Platform', 'fixed', 0, 10000, '2020-01-01 00:00:00', '2020-01-02 23:59:59', 5),
-(5, 0, 'OUTOFSTOCK', 'Shipping', 'fixed', 0, 15000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 5);
+(1, 100, 'SALE1212', 'Platform', 'percent', 100000, 500000, '2025-12-12 00:00:00', '2025-12-12 23:59:59', 1),
+(2, 50, 'TECHSALE', 'Shop', 'fixed', 5000000, 10000000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 2),
+(3, 500, 'FASHION20K', 'Shop', 'fixed', 150000, 200000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 3),
+(4, 10, 'EXPIREDVOUCHER', 'Platform', 'fixed', 0, 100000, '2020-01-01 00:00:00', '2020-01-02 23:59:59', 5),
+(5, 0, 'OUTOFSTOCK', 'Shipping', 'fixed', 0, 150000, '2025-11-01 00:00:00', '2025-11-30 23:59:59', 5);
 GO
 
 -- STAGE 5: CREATE PRODUCT DETAILS (VARIANTS)
@@ -343,163 +343,8 @@ GO
 
 -- ==============================================================================
 -- CORE DATA SETUP
--- ==============================================================================
---Data của Tùng
--- 1. Management Entity (Required for User foreign key)
-INSERT INTO MANAGEMENT_ENTITY VALUES
-(1, '123 Main St, HCMC', '1900-1000', 'support@shopee.vn', 'Shopee Vietnam', 'Nguyen Van A', 'Vietnam', '2015-01-15');
+-- 
 
--- 2. Membership Tiers (Required for Customer)
-INSERT INTO MEMBERSHIP_TIER VALUES
-(1, 'Standard', 0, 0, 0, 0),
-(2, 'Silver', 5, 1000000, 2, 50000),
-(3, 'Gold', 15, 5000000, 5, 200000),
-(4, 'Diamond', 30, 15000000, 10, 500000);
-
--- 3. Users
-INSERT INTO [USER] VALUES
--- Customers
-(1, '079123001', '0901000001', 'buyer1@gmail.com', 'Nguyen Van Minh', 'Male', '1990-05-15', 'active', 1),
-(2, '079123002', '0901000002', 'buyer2@gmail.com', 'Tran Thi Lan', 'Female', '1992-08-20', 'active', 1),
-(3, '079123003', '0901000003', 'buyer3@gmail.com', 'Le Van Hoa', 'Male', '1988-03-10', 'restricted', 1),
--- Shop Owners
-(4, '079123004', '0901000004', 'seller1@gmail.com', 'Pham Thi Mai', 'Female', '1985-11-25', 'active', 1),
-(5, '079123005', '0901000005', 'seller2@gmail.com', 'Hoang Van Tuan', 'Male', '1987-07-18', 'active', 1);
-
--- 4. Customers
-INSERT INTO CUSTOMER VALUES
-(1, 5, 8000000, 2),    -- Silver tier
-(2, 12, 4500000, 3),   -- Gold tier
-(3, 0, 0, 1);          -- Standard tier (restricted account)
-
--- 5. Categories
-INSERT INTO CATEGORY VALUES
-(1, 'Electronics', NULL, 1),
-(2, 'Fashion', NULL, 1),
-(3, 'Smartphones', NULL, 2),
-(4, 'Clothing', NULL, 2);
-
-INSERT INTO CATEGORY_HIERARCHY VALUES (1, 3), (2, 4);
-
--- 6. Shops
-INSERT INTO SHOP_SELL VALUES
-(1, 'Tech World Store', 'Shopee Mall', 'Official tech store', 'active', NULL, 15000, 95.5, 
- '456 Tech St, District 1', '1234567890', 'tech@world.vn', '789 Warehouse', '0123456789', 'Electronics', 4),
-(2, 'Fashion Paradise', 'preferred', 'Trendy fashion', 'active', NULL, 8500, 88.0, 
- '789 Fashion Ave, District 3', '0987654321', 'info@fashion.vn', '321 Stock', '9876543210', 'Clothing', 5);
-
--- 7. Products
-INSERT INTO PRODUCT VALUES
-(1, 'iPhone 15 Pro', 'Latest flagship phone', 29990000, 100, 4.8, NULL, 'for_sale', 3, 1),
-(2, 'Samsung Galaxy S24', 'Premium Android phone', 24990000, 80, 4.7, NULL, 'for_sale', 3, 1),
-(3, 'Nike T-Shirt', 'Premium cotton shirt', 450000, 200, 4.5, NULL, 'for_sale', 4, 2);
-
--- 8. Variants
-INSERT INTO VARIANT VALUES
-(1, '256GB', 'Blue', 'iPhone 15 Pro 256GB Blue', 29990000, 50, 'for_sale', NULL, 1),
-(2, '512GB', 'Black', 'iPhone 15 Pro 512GB Black', 34990000, 30, 'for_sale', NULL, 1),
-(3, '256GB', 'Black', 'Galaxy S24 256GB Black', 24990000, 40, 'for_sale', NULL, 2),
-(4, 'Size L', 'Red', 'Nike T-Shirt L Red', 450000, 100, 'for_sale', NULL, 3),
-(5, 'Size M', 'Blue', 'Nike T-Shirt M Blue', 450000, 50, 'for_sale', NULL, 3),
-(6, '128GB', 'White', 'Galaxy S24 128GB White', 22990000, 35, 'for_sale', NULL, 2);
-
--- 9. Vouchers (for testing voucher validation trigger)
-INSERT INTO PROMOTION_PROGRAM VALUES
-(1, 'Electronics', 'Premium', '2024-01-01', '2024-12-31');
-
-
-INSERT INTO VOUCHER VALUES
-(1, 100, 'TECH500K', 'Platform', 'fixed', 5000000, 50000000, '2024-01-01', '2025-12-31', 1),
-(2, 200, 'SAVE100K', 'Platform', 'fixed', 1000000, 10000000, '2024-01-01', '2025-12-31', 1);
-
-INSERT INTO VOUCHER (Voucher_ID, Voucher_Code, Minimum_Order_Value, Quantity, Start_Date, Expiration_Date)
-    VALUES (8888, 'TECHSALE', 5000000, 100, GETDATE()-1, GETDATE()+30);
-
-
--- ==============================================================================
--- TESTING DATA FOR PROCEDURES
--- ==============================================================================
-
--- Thêm dữ liệu vào order_payment để test
--- Shop 1
-INSERT INTO ORDER_PAYMENT VALUES
-(1, '2024-10-15 10:30:00', 'TECH500K', '123 Nguyen Hue, District 1', 'completed', 1, 
- 'Shopee Pay', 'success', 29540000, 29990000, 50000, 500000, 1),
-(2, '2024-10-20 14:20:00', NULL, '456 Le Loi, District 3', 'completed', 2, 
- 'COD', 'success', 25040000, 24990000, 50000, 0, 2),
-(3, '2024-11-05 09:15:00', NULL, '789 Tran Hung Dao, District 5', 'completed', 3, 
- 'Bank Transfer', 'success', 35040000, 34990000, 50000, 0, 1),
-(4, '2024-11-10 16:00:00', NULL, '321 Vo Van Tan, District 3', 'processing', 4, 
- 'Shopee Pay', 'processing', 22990000, 22990000, 0, 0, 2);
-
--- Shop 2
-INSERT INTO ORDER_PAYMENT VALUES
-(5, '2024-10-18 11:00:00', NULL, '555 Hai Ba Trung, District 1', 'completed', 5, 
- 'Credit Card', 'success', 500000, 450000, 50000, 0, 1);
-
--- Shipments
-INSERT INTO SHIPMENT_PACKAGE VALUES
-(1, 'SPX001234567', '2024-10-18 15:00:00', '2024-10-18 10:00:00', 1, 50000, 'successful delivery', NULL, 1, 1),
-(2, 'JT002345678', '2024-10-23 16:30:00', '2024-10-23 10:00:00', 1, 50000, 'successful delivery', NULL, 2, 2),
-(3, 'SPX003456789', '2024-11-08 14:00:00', '2024-11-08 09:00:00', 1, 50000, 'successful delivery', NULL, 3, 1),
-(4, 'SPX004567890', NULL, '2024-11-12 10:00:00', 1, 0, 'successful delivery', NULL, 4, 2),
-(5, 'GHN005678901', '2024-10-20 12:00:00', '2024-10-20 08:00:00', 2, 50000, 'successful delivery', NULL, 5, 1);
-
--- Order Items (each must use different Variant_ID due to UNIQUE constraint)
-INSERT INTO ORDER_ITEM VALUES
-(1, 29990000, 1, 29990000, 1, 1),
-(2, 24990000, 1, 24990000, 2, 3),
-(3, 34990000, 1, 34990000, 3, 2),
-(4, 22990000, 1, 22990000, 4, 6),
-(5, 450000, 1, 450000, 5, 4);
-
--- Shipment Status for completed orders
-INSERT INTO SHIPMENT_STATUS VALUES
-(1, 1, 'preparing', '2024-10-15 11:00:00', 'Tech World Warehouse'),
-(1, 2, 'shipping', '2024-10-16 08:00:00', 'District 1 Hub'),
-(1, 3, 'delivered', '2024-10-18 15:00:00', 'Customer Address'),
-(2, 1, 'preparing', '2024-10-20 15:00:00', 'Tech World Warehouse'),
-(2, 2, 'shipping', '2024-10-21 09:00:00', 'District 3 Hub'),
-(2, 3, 'delivered', '2024-10-23 16:30:00', 'Customer Address'),
-(3, 1, 'preparing', '2024-11-05 10:00:00', 'Tech World Warehouse'),
-(3, 2, 'shipping', '2024-11-06 08:00:00', 'District 5 Hub'),
-(3, 3, 'delivered', '2024-11-08 14:00:00', 'Customer Address');
-
--- Product Reviews
-INSERT INTO PRODUCT_REVIEW VALUES
-(1, '2024-10-19 10:00:00', NULL, 'Great phone, very fast!', 5, 1, 1),
-(2, '2024-10-24 14:30:00', NULL, 'Good value for money', 4, 2, 2),
-(3, '2024-11-09 09:00:00', NULL, 'Excellent product, highly recommended', 5, 1, 1);
-
--- Vouchers
-INSERT INTO PAYMENT_VOUCHER VALUES
-(1, 1); 
-
--- Data test procedure
-IF NOT EXISTS (SELECT 1 FROM [USER] WHERE User_ID IN (801, 802, 803))
-BEGIN
-    INSERT INTO [USER] (User_ID, ID_number, Phone_number, Email, Full_name, Entity_ID, Account_status) VALUES
-    (801, 'ID801', '0980101010', 'vip@test.com', 'Nguyen Van Dai Gia', 1, 'active'),
-    (802, 'ID802', '0980202020', 'normal@test.com', 'Tran Van Trung Luu', 1, 'active'),
-    (803, 'ID803', '0980303030', 'tiny@test.com', 'Le Van Tieu Gia', 1, 'active');
-END
-
--- 2. Tạo Đơn hàng năm 2025 (Chỉ cần tạo Payment là đủ để test procedure này)
-DELETE FROM ORDER_PAYMENT WHERE User_ID IN (801, 802, 803);
-
--- User 801: Mua đơn 50 Triệu
-INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
-VALUES (9901, '2025-05-01', 'completed', 9901, 'Bank Transfer', 'success', 'Villa Quan 7', 50000000, 50000000, 0, 0, 801);
-
--- User 802: Mua đơn 10 Triệu
-INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
-VALUES (9902, '2025-06-01', 'completed', 9902, 'Shopee Pay', 'success', 'Chung cu Quan 2', 10000000, 10000000, 0, 0, 802);
-
--- User 803: Mua đơn 500k
-INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Order_Status, Payment_ID, Payment_Method, Payment_Status, Address, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
-VALUES (9903, '2025-07-01', 'completed', 9903, 'COD', 'success', 'Phong tro Go Vap', 500000, 500000, 0, 0, 803);
-
-GO
 -- ===================================================
 -- DỮ LIỆU BỔ SUNG CHO HÀM
 -- ===================================================
@@ -808,3 +653,88 @@ INSERT INTO PRODUCT_REVIEW (Review_ID, Review_Date, Rating_Star, P_ID, User_ID)
 VALUES
 (210, '2025-11-18 16:00:00', 4, 1016, 108); -- User 108 (4 sao)
 GO
+
+
+
+-- ==============================================================================
+
+INSERT INTO VARIANT (Variant_ID, Option_Value_1, Option_Value_2, Variant_Name, Price, SKU, Variant_Status, Variant_Image, P_ID) 
+VALUES
+-- Cho Shop 502 (Fashion): Restock Áo thun
+(2036, 'Red', 'L', 'Mens T-Shirt (Red, L) - Batch 2', 150000, 100, 'for_sale', NULL, 1002),
+-- Cho Shop 502: Lô Serum mới
+(2037, '30ml', NULL, 'Vitamin C Serum (30ml) - Batch 2', 300000, 100, 'for_sale', NULL, 1004),
+-- Cho Shop 501: iPhone bản giới hạn (Cho User 101)
+(2038, 'Gold', '1TB', 'iPhone 15 PM Gold - VIP 1', 40000000, 10, 'for_sale', NULL, 1001),
+-- Cho Shop 502: Áo thun bán sỉ (Cho User 110)
+(2039, 'Blue', 'M', 'Mens T-Shirt (Blue, M) - Batch 3', 150000, 500, 'for_sale', NULL, 1002),
+-- Cho Shop 501: iPhone bản giới hạn (Cho User 110 - Năm 2024)
+(2040, 'Titanium', '1TB', 'iPhone 15 PM Titan - VIP 2', 40000000, 10, 'for_sale', NULL, 1001);
+GO
+
+-- 2. TẠO CÁC GIAO DỊCH LỊCH SỬ VÀ VIP (NỐI TIẾP ID TỪ 9108)
+
+-- [Đơn 9108] - Năm 2024 (Quá khứ): User 107 mua Serum (Variant 2037)
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9108, '2024-03-15 14:00:00', NULL, '111 St', 'completed', 10108, 'COD', 'success', 315000, 300000, 15000, 0, 107);
+
+INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estimated_Delivery_Date, Group_ID, Shipping_Fee, Shipment_type, Reason, Order_ID, Customer_ID)
+VALUES (8108, 'SPX-OLD-01', '2024-03-17 10:00:00', '2024-03-17 00:00:00', 1, 15000, 'successful delivery', NULL, 9108, 107);
+
+INSERT INTO SHIPMENT_STATUS (Shipment_ID, Status_ID, Status_Name, Updated_time, Current_Location)
+VALUES (8108, 1, 'delivered', '2024-03-17 10:00:00', 'Customer Address');
+
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
+VALUES (7108, 300000, 1, 300000, 8108, 2037);
+
+
+-- [Đơn 9109] - Năm 2024 (Quá khứ): User 108 mua Áo thun (Variant 2036)
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9109, '2024-08-20 10:00:00', NULL, '222 St', 'completed', 10109, 'Shopee Pay', 'success', 165000, 150000, 15000, 0, 108);
+
+INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estimated_Delivery_Date, Group_ID, Shipping_Fee, Shipment_type, Reason, Order_ID, Customer_ID)
+VALUES (8109, 'SPX-OLD-02', '2024-08-22 14:00:00', '2024-08-22 00:00:00', 1, 15000, 'successful delivery', NULL, 9109, 108);
+
+INSERT INTO SHIPMENT_STATUS (Shipment_ID, Status_ID, Status_Name, Updated_time, Current_Location)
+VALUES (8109, 1, 'delivered', '2024-08-22 14:00:00', 'Customer Address');
+
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
+VALUES (7109, 150000, 1, 150000, 8109, 2036);
+
+
+-- [Đơn 9110] - Năm 2025 (Hiện tại): User 110 mua Sỉ Áo thun (Variant 2039)
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9110, '2025-12-05 09:00:00', NULL, '333 St', 'completed', 10110, 'Bank Transfer', 'success', 1550000, 1500000, 50000, 0, 110);
+
+INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estimated_Delivery_Date, Group_ID, Shipping_Fee, Shipment_type, Reason, Order_ID, Customer_ID)
+VALUES (8110, 'SPX-NEW-01', '2025-12-07 09:00:00', '2025-12-07 00:00:00', 1, 50000, 'successful delivery', NULL, 9110, 110);
+
+INSERT INTO SHIPMENT_STATUS (Shipment_ID, Status_ID, Status_Name, Updated_time, Current_Location)
+VALUES (8110, 1, 'delivered', '2025-12-07 09:00:00', 'Customer Address');
+
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
+VALUES (7110, 150000, 10, 1500000, 8110, 2039);
+
+
+-- [Đơn 9111] - Năm 2025: User 101 mua iPhone VIP (Variant 2038)
+-- Mục đích: Đẩy User 101 lên Top VIP 2025 (40 Triệu)
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9111, '2025-05-15 10:00:00', NULL, '123 Le Loi', 'completed', 10111, 'Credit Card', 'success', 40000000, 40000000, 0, 0, 101);
+
+INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estimated_Delivery_Date, Group_ID, Shipping_Fee, Shipment_type, Reason, Order_ID, Customer_ID)
+VALUES (8111, 'VIP-01', '2025-05-17 10:00:00', '2025-05-17 00:00:00', 1, 0, 'successful delivery', NULL, 9111, 101);
+
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
+VALUES (7111, 40000000, 1, 40000000, 8111, 2038);
+
+
+-- [Đơn 9112] - Năm 2024: User 110 mua iPhone VIP (Variant 2040)
+-- Mục đích: User 110 là VIP năm ngoái (80 Triệu)
+INSERT INTO ORDER_PAYMENT (Order_ID, Order_date, Voucher_code, Address, Order_Status, Payment_ID, Payment_Method, Payment_Status, Payed_value, Product_value, Shipment_value, Voucher_value, User_ID)
+VALUES (9112, '2024-12-20 10:00:00', NULL, '333 St', 'completed', 10112, 'Credit Card', 'success', 80000000, 80000000, 0, 0, 110);
+
+INSERT INTO SHIPMENT_PACKAGE (Shipment_ID, Tracking_Number, Delivery_Date, Estimated_Delivery_Date, Group_ID, Shipping_Fee, Shipment_type, Reason, Order_ID, Customer_ID)
+VALUES (8112, 'VIP-OLD', '2024-12-22 10:00:00', '2024-12-22 00:00:00', 1, 0, 'successful delivery', NULL, 9112, 110);
+
+INSERT INTO ORDER_ITEM (Order_Item_ID, Price_at_Purchase, Quantity, Final_Item_Price, Shipment_ID, Variant_ID)
+VALUES (7112, 40000000, 2, 80000000, 8112, 2040);
