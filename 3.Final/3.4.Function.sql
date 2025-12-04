@@ -20,7 +20,7 @@
  		DECLARE @categoryID INT, @shopID INT;
  		DECLARE @categoryName VARCHAR(255), @productName VARCHAR(255), @shopName VARCHAR(255);
  		DECLARE @basePrice DECIMAL(10,2), @rating DECIMAL(3,2);
- 		DECLARE @totalSales INT;
+ 		DECLARE @totalSales INT, @baseImage NVARCHAR(MAX);
  		DECLARE @description VARCHAR(MAX);
  
  		-- JSON kết quả (Output: recommendedProducts)
@@ -108,7 +108,7 @@
  		BEGIN
    		-- Lấy thông tin chi tiết sản phẩm (Lấy dữ liệu từ truy vấn để tính toán)
    		SELECT
-     		@categoryID = c.Category_ID, @categoryName = c.Category_name,
+     		@categoryID = c.Category_ID, @categoryName = c.Category_name, @baseImage = p.Base_Image,
      		@productName = p.Product_name, @basePrice = p.Base_Price,
      		@description = ISNULL(p.Description, ''), @rating = ISNULL(p.Average_Rating, 0),
      		@totalSales = p.Total_Sales, @shopID = s.Shop_ID, @shopName = s.Shop_name
@@ -124,6 +124,7 @@
      		SET @productJSON = '{' +
        		'"productId": ' + CAST(@productID AS NVARCHAR(10)) + ', ' +
        		'"productName": "' + REPLACE(@productName, '"', '\"') + '", ' +
+			'"baseImage": "' + REPLACE(@baseImage, '"', '\"') + '", ' +
        		'"categoryId": ' + CAST(@categoryID AS NVARCHAR(10)) + ', ' +
        		'"categoryName": "' + REPLACE(@categoryName, '"', '\"') + '", ' +
        		'"price": ' + CAST(@basePrice AS NVARCHAR(20)) + ', ' +
